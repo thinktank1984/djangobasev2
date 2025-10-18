@@ -1,6 +1,6 @@
 #!/bin/bash
-# Type checking script for pybase project
-# Runs Pyright in Docker container by default, with local fallback
+# Type checking script for Django blog application
+# Runs Mypy with Django support by default, with local fallback
 
 set -e
 
@@ -25,14 +25,14 @@ for arg in "$@"; do
             echo "Usage: $0 [OPTIONS] [FILES...]"
             echo ""
             echo "Options:"
-            echo "  --local     Run type checking locally (default: Docker)"
+            echo "  --local     Run type checking locally (default: local)"
             echo "  --help, -h  Show this help message"
             echo ""
             echo "Examples:"
-            echo "  $0                          # Run full type check in Docker"
+            echo "  $0                          # Run full type check on Django project"
             echo "  $0 --local                  # Run full type check locally"
-            echo "  $0 runtime/app.py          # Check specific file in Docker"
-            echo "  $0 --local runtime/*.py    # Check specific files locally"
+            echo "  $0 apps/models.py          # Check specific file"
+            echo "  $0 apps/*.py               # Check all files in apps directory"
             exit 0
             ;;
         *)
@@ -42,55 +42,43 @@ for arg in "$@"; do
 done
 
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}    Type Checking with Pyright${NC}"
+echo -e "${BLUE}    Type Checking with Mypy (Django)${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-if [ "$DOCKER_MODE" = true ]; then
-    echo -e "${YELLOW}Running in Docker container...${NC}"
-    echo ""
-    
-    # Check if Docker container is running
-    if ! docker compose -f docker/docker-compose.yaml ps runtime | grep -q "Up"; then
-        echo -e "${YELLOW}Starting Docker container...${NC}"
-        docker compose -f docker/docker-compose.yaml up -d runtime
-        echo -e "${GREEN}Container started.${NC}"
-        echo ""
-    fi
-    
-    # Run Pyright in Docker
-    if [ -z "$TARGET_FILES" ]; then
-        echo -e "${BLUE}Checking entire project...${NC}"
-        docker compose -f docker/docker-compose.yaml exec runtime pyright --project /app/setup/pyrightconfig.json
-    else
-        echo -e "${BLUE}Checking: $TARGET_FILES${NC}"
-        docker compose -f docker/docker-compose.yaml exec runtime pyright --project /app/setup/pyrightconfig.json $TARGET_FILES
-    fi
-    
-    EXIT_CODE=$?
-else
-    echo -e "${YELLOW}Running locally...${NC}"
-    echo ""
-    
-    # Check if pyright is installed locally
-    if ! command -v pyright &> /dev/null; then
-        echo -e "${RED}ERROR: Pyright not found locally.${NC}"
-        echo -e "${YELLOW}Install with: uv pip install pyright${NC}"
-        echo -e "${YELLOW}Or run without --local to use Docker.${NC}"
-        exit 1
-    fi
-    
-    # Run Pyright locally
-    if [ -z "$TARGET_FILES" ]; then
-        echo -e "${BLUE}Checking entire project...${NC}"
-        pyright --project setup/pyrightconfig.json
-    else
-        echo -e "${BLUE}Checking: $TARGET_FILES${NC}"
-        pyright --project setup/pyrightconfig.json $TARGET_FILES
-    fi
-    
-    EXIT_CODE=$?
+# Navigate to blogapp directory
+cd blogapp
+
+# Check if virtual environment exists
+if [ -d "../venv" ]; then
+    echo -e "${GREEN}Activating virtual environment...${NC}"
+    source ../venv/bin/activate
 fi
+
+# Install mypy and Django stubs if not present
+if ! python -c "import mypy" &> /dev/null; then
+    echo -e "${YELLOW}Installing mypy and Django stubs...${NC}"
+    pip install mypy django-stubs types-requests types-PyYAML
+fi
+
+if [ "$DOCKER_MODE" = true ]; then
+    echo -e "${YELLOW}Docker mode not yet implemented for Django blog application${NC}"
+    echo -e "${YELLOW}Running locally instead...${NC}"
+fi
+
+echo -e "${YELLOW}Running locally...${NC}"
+echo ""
+
+# Run Mypy with Django support
+if [ -z "$TARGET_FILES" ]; then
+    echo -e "${BLUE}Checking entire Django project...${NC}"
+    mypy --django-settings-module=core.settings --strict-optional --ignore-missing-imports .
+else
+    echo -e "${BLUE}Checking: $TARGET_FILES${NC}"
+    mypy --django-settings-module=core.settings --strict-optional --ignore-missing-imports $TARGET_FILES
+fi
+
+EXIT_CODE=$?
 
 echo ""
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

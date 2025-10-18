@@ -1,6 +1,6 @@
 #!/bin/bash
 # Script to run type checking on each Python file individually
-# and save results to separate output files
+# and save results to separate output files - Django blog version
 
 set -e
 
@@ -16,19 +16,25 @@ OUTPUT_DIR="type_check_results"
 mkdir -p "$OUTPUT_DIR"
 
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}    Per-File Type Checking${NC}"
+echo -e "${BLUE}    Per-File Type Checking (Django)${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 echo -e "${YELLOW}Results will be saved to: $OUTPUT_DIR/${NC}"
 echo ""
 
-# Check if Docker container is running
-if ! docker compose -f docker/docker-compose.yaml ps runtime | grep -q "Up"; then
-    echo -e "${YELLOW}Starting Docker container...${NC}"
-    docker compose -f docker/docker-compose.yaml up -d runtime
-    sleep 2
-    echo -e "${GREEN}Container started.${NC}"
-    echo ""
+# Navigate to blogapp directory
+cd blogapp
+
+# Check if virtual environment exists
+if [ -d "../venv" ]; then
+    echo -e "${GREEN}Activating virtual environment...${NC}"
+    source ../venv/bin/activate
+fi
+
+# Install mypy and Django stubs if not present
+if ! python -c "import mypy" &> /dev/null; then
+    echo -e "${YELLOW}Installing mypy and Django stubs...${NC}"
+    pip install mypy django-stubs types-requests types-PyYAML
 fi
 
 # Counter
@@ -36,9 +42,9 @@ total_files=0
 files_with_errors=0
 files_clean=0
 
-# Find all Python files in runtime/ and integration_tests/
+# Find all Python files in Django project (excluding migrations and cache)
 echo -e "${BLUE}Finding Python files...${NC}"
-python_files=$(find runtime integration_tests -name "*.py" -type f ! -path "*/migrations/*" ! -path "*/__pycache__/*" ! -path "*/node_modules/*" ! -path "*/databases/*" ! -path "*/htmlcov/*" ! -path "*/screenshots/*" 2>/dev/null)
+python_files=$(find . -name "*.py" -type f ! -path "*/migrations/*" ! -path "*/__pycache__/*" ! -path "*/venv/*" ! -path "*/htmlcov/*" ! -path "*/screenshots/*" ! -path "*/static/*" ! -path "*/templates/*" 2>/dev/null)
 
 total_count=$(echo "$python_files" | wc -l | tr -d ' ')
 echo -e "${GREEN}Found $total_count Python files to check${NC}"
@@ -56,7 +62,7 @@ for file in $python_files; do
     echo -e "${BLUE}[$current/$total_count]${NC} Checking: $file"
     
     # Run type check and save output
-    if docker compose -f docker/docker-compose.yaml exec -T runtime pyright --project /app/setup/pyrightconfig.json "/app/$file" > "$output_file" 2>&1; then
+    if mypy --django-settings-module=core.settings --strict-optional --ignore-missing-imports "$file" > "$output_file" 2>&1; then
         # No errors
         files_clean=$((files_clean + 1))
         echo -e "  ${GREEN}✓ Clean${NC}"
