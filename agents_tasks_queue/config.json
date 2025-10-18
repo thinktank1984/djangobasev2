@@ -1,0 +1,5 @@
+{
+  "log_dir": "logs",
+  "pipeline": ["tee", "-a", "logs/pgq.log"],
+  "pg_port": 5544
+}

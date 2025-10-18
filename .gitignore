@@ -297,6 +297,13 @@ logs/
 media/
 !media/.gitkeep
 
+# PGQ-Cmd PostgreSQL Database
+.pgbin/
+.pgdata/
+.pgqvenv/
+.pgq_core.py
+postgresql-15.6/
+
 # IDE and Editor Files
 .vscode/settings.json
 .idea/
