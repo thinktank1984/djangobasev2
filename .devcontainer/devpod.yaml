@@ -1,0 +1,122 @@
+version: v1beta8
+name: djangobasev2-dev
+
+# IDE configuration
+ide:
+  name: vscode
+  # Automatically open VS Code when connecting
+  open: true
+  # VS Code extensions to install
+  extensions:
+    - ms-python.python
+    - ms-python.vscode-pylance
+    - batisteo.vscode-django
+    - ms-python.black-formatter
+    - ms-python.isort
+    - donjayamanne.githistory
+    - eamodio.gitlens
+    - bradlc.vscode-tailwindcss
+    - esbenp.prettier-vscode
+    - ms-vscode.vscode-typescript-next
+
+# Development container configuration
+dev:
+  # Base image to use - using Python 3.11 for Django compatibility
+  image: python:3.11-slim
+
+  # Environment variables
+  environment:
+    - DJANGO_SETTINGS_MODULE=core.settings
+    - PYTHONPATH=/workspaces/djangobasev2/blogapp
+    - DEBUG=1
+    - PYTHONDONTWRITEBYTECODE=1
+    - PYTHONUNBUFFERED=1
+    - DEBIAN_FRONTEND=noninteractive
+
+  # Commands to run when starting the development environment
+  init:
+    - echo "🐍 Setting up Python development environment..."
+    - python --version
+    - pip install --upgrade pip setuptools wheel
+    - echo "📦 Installing Django dependencies..."
+    - if [ -f "blogapp/requirements.txt" ]; then pip install -r blogapp/requirements.txt; else echo "⚠️ Requirements file not found"; fi
+    - echo "🗄️ Running Django migrations..."
+    - cd blogapp && python manage.py migrate --noinput || echo "⚠️ Migration completed with warnings"
+    - echo "🎨 Collecting static files..."
+    - cd blogapp && python manage.py collectstatic --noinput || echo "⚠️ Static files collection completed with warnings"
+    - echo "🚀 Django development environment ready!"
+    - echo "📝 Django management commands available:"
+    - echo "   cd blogapp && python manage.py runserver 0.0.0.0:8000"
+    - echo "   cd blogapp && python manage.py createsuperuser"
+    - echo "   cd blogapp && python manage.py makemigrations"
+
+  # Ports to forward
+  ports:
+    - port: 8000
+      description: Django development server
+      onAutoForward: notify
+    - port: 3000
+      description: Node.js development server (if needed)
+      onAutoForward: ignore
+    - port: 5432
+      description: PostgreSQL database (if using external DB)
+      onAutoForward: ignore
+
+  # Volume mounts
+  mount:
+    - .:/workspaces/djangobasev2
+    - /workspaces/djangobasev2/venv:/workspaces/djangobasev2/venv  # Mount existing venv if present
+
+  # Working directory
+  workdir: /workspaces/djangobasev2
+
+  # Shell to use
+  shell: /bin/bash
+
+  # Container user configuration
+  user: root
+
+  # Commands to run continuously
+  # Note: These run in the background - Django server should be started manually
+  # command:
+  #   - cd blogapp && python manage.py runserver 0.0.0.0:8000
+
+# Provider configuration
+provider:
+  name: docker
+
+# Kubernetes-specific configuration (if using Kubernetes provider)
+# kubernetes:
+#   resources:
+#     requests:
+#       cpu: "500m"
+#       memory: "1Gi"
+#     limits:
+#       cpu: "2"
+#       memory: "4Gi"
+#   storage:
+#     size: "10Gi"
+
+# Cache configuration for better performance
+cache:
+  - path: /root/.cache/pip
+    name: pip-cache
+  - path: /workspaces/djangobasev2/blogapp/staticfiles
+    name: django-static-cache
+  - path: /workspaces/djangobasev2/blogapp/static
+    name: django-src-static-cache
+
+# Health checks
+health:
+  command: python --version && pip list
+  interval: 30s
+  timeout: 10s
+  retries: 3
+
+# Backup configuration (optional)
+# backup:
+#   enabled: true
+#   schedule: "0 2 * * *"  # Daily at 2 AM
+#   paths:
+#     - /workspaces/djangobasev2/blogapp/db.sqlite3
+#     - /workspaces/djangobasev2/blogapp/media

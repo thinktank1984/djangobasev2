@@ -69,6 +69,15 @@ else
     echo -e "${YELLOW}⚠️  glm_setup.sh not found in $SETUP_DIR. Skipping GLM setup.${NC}"
 fi
 
+# OpenSpec Installation
+echo -e "${BLUE}Installing OpenSpec...${NC}"
+if command -v npm &> /dev/null; then
+    npm install -g @fission-ai/openspec@latest
+    echo -e "${GREEN}✅ OpenSpec installed${NC}"
+else
+    echo -e "${YELLOW}⚠️  npm not found. Skipping OpenSpec installation.${NC}"
+fi
+
 # Virtualenv
 echo -e "${BLUE}Setting up virtual environment...${NC}"
 if [ "$FORCE_REBUILD" = true ] && [ -d "venv" ]; then
