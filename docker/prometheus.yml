@@ -1,0 +1,30 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Scrape Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Scrape Emmett application metrics
+  - job_name: 'emmett-app'
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['runtime:8081']
+        labels:
+          app: 'bloggy'
+          environment: 'development'
+
+  # Scrape Bugsink metrics (if you expose a /metrics endpoint later)
+  - job_name: 'bugsink'
+    static_configs:
+      - targets: ['bugsink:8000']
+
+  # Scrape cAdvisor metrics (Docker container metrics)
+  - job_name: 'cadvisor'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['cadvisor:8080']

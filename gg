@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# Gemini Code quick launcher (minimal checks)
+# For full setup with automatic installs, use ./g
+
+echo "🎯 Gemini Code Quick Launcher"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+# Check if gemini is installed
+if ! command -v gemini > /dev/null 2>&1; then
+    echo "❌ Gemini CLI not found"
+    echo "ℹ️  Run ./g first to install all dependencies"
+    exit 1
+fi
+
+# Check if venv exists and activate it
+if [ -d "venv" ]; then
+    echo "🐍 Activating Python virtual environment..."
+    . ./venv/bin/activate
+else
+    echo "ℹ️  No Python venv found in $(pwd)"
+fi
+
+echo ""
+echo "✅ Starting Gemini Code..."
+echo ""
+
+# Set API key and launch
+GEMINI_API_KEY="AIzaSyBLSp-lpMjgZKhFZM7KEi9q63dOUyQ_qlY" gemini --sandbox=disabled --yolo

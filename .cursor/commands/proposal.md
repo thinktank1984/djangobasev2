@@ -1,0 +1,1 @@
+Please create an OpenSpec change proposal for this feature ${featutre_name} ${featutre description}

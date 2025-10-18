@@ -1,0 +1,141 @@
+#!/bin/bash
+# Pre-commit hook for Emmett model validation and type checking
+# Validates models and runs type checking before allowing commit
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+# Get project root
+PROJECT_ROOT=$(git rev-parse --show-toplevel)
+cd "$PROJECT_ROOT" || exit 1
+
+# Check if any Python files were modified
+PYTHON_FILES_CHANGED=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$' || true)
+
+if [ -z "$PYTHON_FILES_CHANGED" ]; then
+    # No Python files changed, skip checks
+    exit 0
+fi
+
+# Check if any model files were modified
+MODEL_FILES_CHANGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '^runtime/(app\.py|models/.*\.py)$' || true)
+
+# Variables to track if checks should run
+RUN_MODEL_VALIDATION=false
+RUN_TYPE_CHECKING=true  # Always run type checking for Python files
+
+if [ -n "$MODEL_FILES_CHANGED" ]; then
+    RUN_MODEL_VALIDATION=true
+fi
+
+#━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 1. MODEL VALIDATION (if model files changed)
+#━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+if [ "$RUN_MODEL_VALIDATION" = true ]; then
+    echo -e "${BLUE}🔍 Model files changed, running validation...${NC}"
+    echo ""
+
+    # Run validation
+    cd runtime || exit 1
+
+    # Try to run validation with proper Python environment
+    if [ -f "../venv/bin/python" ]; then
+        PYTHON="../venv/bin/python"
+    elif command -v uv &> /dev/null; then
+        PYTHON="uv run python"
+    elif command -v python3 &> /dev/null; then
+        PYTHON="python3"
+    else
+        PYTHON="python"
+    fi
+
+    # Run validation - block only on errors, allow warnings
+    if $PYTHON validate_models.py --all --severity error 2>&1; then
+        echo ""
+        echo -e "${GREEN}✅ Model validation passed${NC}"
+    else
+        VALIDATION_EXIT_CODE=$?
+        echo ""
+        echo -e "${RED}❌ Model validation failed${NC}"
+        echo ""
+        echo -e "${YELLOW}Models contain anti-patterns that must be fixed before committing.${NC}"
+        echo ""
+        echo "To fix:"
+        echo "  1. Review the validation errors above"
+        echo "  2. Fix the issues in your model files"
+        echo "  3. Re-run: python runtime/validate_models.py --all"
+        echo ""
+        echo -e "To commit anyway (NOT RECOMMENDED): ${YELLOW}git commit --no-verify${NC}"
+        echo ""
+        exit $VALIDATION_EXIT_CODE
+    fi
+fi
+
+#━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 2. TYPE CHECKING (for all Python files)
+#━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+if [ "$RUN_TYPE_CHECKING" = true ]; then
+    echo ""
+    echo -e "${BLUE}🔍 Running type checking on changed files...${NC}"
+    echo ""
+    
+    # Go back to project root
+    cd "$PROJECT_ROOT" || exit 1
+    
+    # Check if Docker is available and running
+    if command -v docker &> /dev/null && docker compose -f docker/docker-compose.yaml ps runtime | grep -q "Up" 2>/dev/null; then
+        # Use Docker for type checking
+        TYPE_CHECK_ERRORS=0
+        
+        for file in $PYTHON_FILES_CHANGED; do
+            echo -e "  Checking: ${BLUE}$file${NC}"
+            if ! docker compose -f docker/docker-compose.yaml exec -T runtime pyright --project /app/setup/pyrightconfig.json "/app/$file" 2>&1 | grep -E "error:|warning:" > /tmp/pyright_output_$$; then
+                # No errors or warnings
+                :
+            else
+                # Check if there are actual errors (not just warnings)
+                if grep -q "error:" /tmp/pyright_output_$$; then
+                    TYPE_CHECK_ERRORS=$((TYPE_CHECK_ERRORS + 1))
+                    echo -e "    ${RED}✗ Type errors found${NC}"
+                    cat /tmp/pyright_output_$$
+                fi
+            fi
+        done
+        
+        rm -f /tmp/pyright_output_$$
+        
+        if [ $TYPE_CHECK_ERRORS -gt 0 ]; then
+            echo ""
+            echo -e "${RED}❌ Type checking failed with $TYPE_CHECK_ERRORS file(s) containing errors${NC}"
+            echo ""
+            echo -e "${YELLOW}Fix type errors before committing or use type: ignore comments where appropriate.${NC}"
+            echo ""
+            echo "To fix:"
+            echo "  1. Review the type errors above"
+            echo "  2. Add type hints or type: ignore comments"
+            echo "  3. Re-run: ./run_type_check.sh <file>"
+            echo ""
+            echo -e "To commit anyway (NOT RECOMMENDED): ${YELLOW}git commit --no-verify${NC}"
+            echo ""
+            exit 1
+        else
+            echo ""
+            echo -e "${GREEN}✅ Type checking passed${NC}"
+        fi
+    else
+        # Docker not available, warn but don't block
+        echo -e "${YELLOW}⚠️  Docker not available, skipping type checking${NC}"
+        echo -e "${YELLOW}   Run './run_type_check.sh' manually before pushing${NC}"
+    fi
+fi
+
+echo ""
+echo -e "${GREEN}✅ All pre-commit checks passed${NC}"
+echo ""
+exit 0

@@ -1,0 +1,176 @@
+version: "3.8"
+
+services:
+  bugsink_db:
+    image: postgres:16-alpine
+    container_name: bugsink_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bugsink
+      POSTGRES_USER: bugsink
+      POSTGRES_PASSWORD: bugsink_password
+    volumes:
+      - bugsink_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bugsink"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bloggy
+      POSTGRES_USER: bloggy
+      POSTGRES_PASSWORD: bloggy_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bloggy"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  bugsink:
+    image: bugsink/bugsink:latest
+    container_name: bugsink
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Security / basic setup
+      SECRET_KEY: "ZT_yLiPDHWra2sww5j7k8Ay5oOKcXJ4is3XeoYL-SEMi0irOvgqgkJRB3VxZuz8ZrOI"
+      CREATE_SUPERUSER: "admin:admin_password"
+      PORT: 8000
+
+      # Database (PostgreSQL)
+      DATABASE_URL: "postgresql://bugsink:bugsink_password@bugsink_db:5432/bugsink"
+
+      # Optional: public URL if behind proxy
+      BASE_URL: "http://localhost:8000"
+      BEHIND_HTTPS_PROXY: "false"
+
+      # Optional: file-based event storage path
+      FILE_EVENT_STORAGE_PATH: "/data/events"
+      FILE_EVENT_STORAGE_USE_FOR_WRITE: "True"
+
+    volumes:
+      - bugsink_data:/data
+    depends_on:
+      bugsink_db:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--storage.tsdb.retention.time=15d"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - alertmanager
+      - cadvisor
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+  runtime:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: runtime
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - EMMETT_ENV=development
+      # Database configuration
+      - DATABASE_URL=postgres://bloggy:bloggy_password@postgres:5432/bloggy
+      - TEST_DATABASE_URL=postgres://bloggy:bloggy_password@postgres:5432/bloggy_test
+      - DB_POOL_SIZE=20
+      # Valkey cache configuration (optional - enable with VALKEY_ENABLED=true)
+      - VALKEY_ENABLED=false
+      - VALKEY_HOST=valkey
+      - VALKEY_PORT=6379
+      - VALKEY_DB=0
+    volumes:
+      # Mount the full repository to /app in the container
+      - ..:/app
+    working_dir: /app/runtime
+    entrypoint: ["/bin/bash", "/app/docker/entrypoint.sh"]
+    command: ["emmett", "serve", "--host", "0.0.0.0", "--port", "8081"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+  valkey:
+    image: valkey/valkey:7.2-alpine
+    container_name: valkey
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey_data:/data
+    command: valkey-server --appendonly yes --save 60 1 --loglevel warning
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_data:
+  bugsink_db_data:
+  bugsink_data:
+  prometheus_data:
+  alertmanager_data:
+  grafana_data:
+  valkey_data:

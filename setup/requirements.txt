@@ -1,0 +1,136 @@
+# Additional optional dependencies for Emmett applications
+# These are NOT required for core functionality but provide useful extras
+# Install with: uv pip install -r setup/requirements.txt
+
+# ============================================================================
+# Emmett Framework (Core)
+# ============================================================================
+
+emmett>=2.5.0           # Emmett web framework
+emmett-rest>=1.2.0      # REST extension for Emmett (REST API generation)
+emmett-sentry>=0.4.0    # Sentry integration for Emmett (optional)
+prometheus-client>=0.20.0  # Prometheus metrics (custom integration)
+
+# ============================================================================
+# Development & Testing Extras
+# ============================================================================
+
+# Testing
+pytest>=7.0.0           # Testing framework
+pytest-cov>=4.0.0       # Test coverage
+pytest-asyncio>=0.21.0  # Async test support
+coverage>=7.0.0         # Coverage reporting
+playwright>=1.40.0      # Real browser automation for UI tests
+pytest-playwright>=0.4.0  # Playwright pytest plugin
+
+# Type Checking
+monkeytype>=23.3.0     # Automatic type annotation generation from runtime traces
+pyright>=1.1.0         # Fast static type checker
+
+# Enhanced debugging
+ipdb>=0.13.13           # Interactive debugger
+
+# API Testing
+requests>=2.31.0        # HTTP library for testing APIs
+httpx>=0.25.0           # Async HTTP client
+
+# ============================================================================
+# Data & File Processing
+# ============================================================================
+
+# Excel & CSV handling
+openpyxl>=3.1.0         # Excel file operations
+pandas>=2.0.0           # Data manipulation
+tablib>=3.5.0           # Data export formats (CSV, Excel, JSON, YAML)
+
+# Image processing
+pillow>=11.0.0          # Image manipulation
+pillow-heif>=0.15.0     # HEIF/HEIC image support
+
+# PDF generation
+reportlab>=4.0.0        # PDF generation
+weasyprint>=60.0        # HTML to PDF
+
+# ============================================================================
+# External Services Integration
+# ============================================================================
+
+# Cloud services (Google Cloud Platform)
+google-cloud-storage>=2.10.0    # GCS for file storage
+google-auth>=2.23.0             # Google authentication
+
+# AWS services
+boto3>=1.28.0           # AWS SDK
+
+# Email templates
+premailer>=3.10.0       # Inline CSS for emails
+
+# ============================================================================
+# Utilities
+# ============================================================================
+
+# Web scraping & crawling
+beautifulsoup4>=4.12.0  # HTML parsing
+html2text>=2020.1.16    # Convert HTML to markdown
+scrapy>=2.11.0          # Web scraping framework
+
+# Data validation
+phonenumbers>=8.13.0    # Phone number validation
+email-validator>=2.1.0  # Email validation
+
+# Timezone utilities
+pytz>=2023.3            # Timezone database
+
+# Code generation & templating
+cookiecutter>=2.5.0     # Project/code scaffolding
+jinja2>=3.1.0           # Template engine (in addition to Renoir)
+
+# ============================================================================
+# Monitoring & Logging
+# ============================================================================
+
+# Sentry integration
+sentry-sdk>=2.0.0       # Error tracking
+
+# Logging enhancements
+python-json-logger>=2.0.7   # JSON logging
+colorlog>=6.8.0             # Colored console logs
+
+# ============================================================================
+# Database Utilities
+# ============================================================================
+
+# Database drivers
+psycopg2-binary>=2.9.0  # PostgreSQL adapter for pyDAL (primary database)
+pymysql>=1.1.0          # MySQL adapter (optional)
+redis>=5.0.0            # Redis client
+valkey>=5.0.0           # Valkey client (Redis-compatible, open-source alternative)
+
+# ============================================================================
+# API Enhancements
+# ============================================================================
+
+# API utilities
+python-multipart>=0.0.6     # Multipart form data parsing
+python-jose>=3.3.0          # JWT tokens
+passlib>=1.7.4              # Password hashing
+
+# OAuth 2.0 & Social Login
+authlib>=1.3.0              # OAuth 2.0 and OpenID Connect client
+cryptography>=41.0.0        # Token encryption (Fernet)
+
+# ============================================================================
+# Notes
+# ============================================================================
+# 
+# Core Emmett dependencies are minimal:
+# - emmett>=2.5.0 (includes pyDAL, Renoir, granian)
+# - pytest>=7.0.0 (for testing)
+#
+# This file contains OPTIONAL extras for specific use cases:
+# - Advanced data processing (pandas, Excel)
+# - Cloud integrations (Google Cloud, AWS)
+# - Web scraping
+# - Enhanced monitoring
+# - PDF generation
+# - Additional database drivers

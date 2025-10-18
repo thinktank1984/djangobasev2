@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker compose exec:*)",
+      "Bash(python:*)",
+      "Bash(ln:*)",
+      "Bash(rm:*)",
+      "Bash(./run_tests.sh:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

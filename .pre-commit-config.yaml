@@ -1,0 +1,78 @@
+# Pre-commit hooks for code quality and policy enforcement
+# Install: pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # NO MOCKING POLICY ENFORCEMENT - CRITICAL
+  - repo: local
+    hooks:
+      - id: no-mocking-policy
+        name: 🚨 NO MOCKING POLICY VALIDATOR
+        entry: python3 integration_tests/validate_no_mocking.py --strict
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+        stages: [commit, push]
+        description: |
+          Enforces ZERO-TOLERANCE NO MOCKING POLICY
+          
+          ❌ BANNED:
+            - unittest.mock, Mock(), MagicMock()
+            - pytest-mock, mocker fixture
+            - @patch decorators
+            - Any mocking/stubbing libraries
+          
+          ✅ REQUIRED:
+            - Real database operations
+            - Real HTTP requests
+            - Real integration tests only
+
+  # Python code formatting (optional)
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        name: Black (Python formatter)
+        language_version: python3
+        
+  # Python import sorting (optional)
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: isort (Import sorter)
+        args: ["--profile", "black"]
+
+  # Python linting (optional)
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+        name: Flake8 (Linter)
+        args: [
+          "--max-line-length=120",
+          "--ignore=E203,E266,E501,W503",
+          "--select=B,C,E,F,W,T4,B9"
+        ]
+
+  # Trailing whitespace removal
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        name: Remove trailing whitespace
+      - id: end-of-file-fixer
+        name: Fix end of files
+      - id: check-yaml
+        name: Check YAML files
+      - id: check-json
+        name: Check JSON files
+      - id: check-added-large-files
+        name: Check for large files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: detect-private-key
+        name: Detect private keys
+
