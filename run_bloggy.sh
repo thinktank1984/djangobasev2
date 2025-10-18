@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Runtime Application Run Script
+# Django Blog Application Run Script
 # Supports both Docker and local development modes
 
 set -e
@@ -59,39 +59,41 @@ done
 
 if [ "$USE_DOCKER" = true ]; then
     if [ "$USE_BACKGROUND" = true ]; then
-        echo -e "${BLUE}🚀 Starting Runtime Application in Docker (background)...${NC}"
+        echo -e "${BLUE}🚀 Starting Django Blog Application in Docker (background)...${NC}"
     else
-        echo -e "${BLUE}🚀 Starting Runtime Application in Docker (foreground)...${NC}"
+        echo -e "${BLUE}🚀 Starting Django Blog Application in Docker (foreground)...${NC}"
     fi
 else
-    echo -e "${BLUE}🚀 Starting Runtime Application (local mode)...${NC}"
+    echo -e "${BLUE}🚀 Starting Django Blog Application (local mode)...${NC}"
 fi
 echo ""
 
-# Run setup script first to ensure environment is ready
+# Run environment setup checks
 echo -e "${BLUE}Running setup checks...${NC}"
 if [ "$USE_DOCKER" = true ]; then
-    "$PROJECT_ROOT/setup/setup.sh" --docker
-else
-    "$PROJECT_ROOT/setup/setup.sh" --local
+    echo -e "${YELLOW}⚠️ Docker mode not yet implemented for Django blog application${NC}"
+    echo -e "${YELLOW}   Using local mode instead${NC}"
+    USE_DOCKER=false
 fi
-echo ""
 
-# Validate models for anti-patterns
-echo -e "${BLUE}Validating Emmett models...${NC}"
-if [ "$USE_DOCKER" = true ]; then
-    docker compose -f docker/docker-compose.yaml exec -T runtime python validate_models.py --all --severity warning 2>/dev/null || {
-        echo -e "${YELLOW}⚠ Model validation skipped (container not running or validation failed)${NC}"
-    }
+# Run Django migrations and checks
+echo -e "${BLUE}Running Django migrations...${NC}"
+cd blogapp
+if python manage.py migrate --check; then
+    echo -e "${GREEN}✅ Database is up to date${NC}"
 else
-    cd runtime
-    if python validate_models.py --all --severity warning; then
-        echo -e "${GREEN}✅ Model validation passed${NC}"
-    else
-        echo -e "${YELLOW}⚠ Model validation found issues (see output above)${NC}"
-    fi
-    cd "$PROJECT_ROOT"
+    echo -e "${BLUE}Applying pending migrations...${NC}"
+    python manage.py migrate
+    echo -e "${GREEN}✅ Migrations applied successfully${NC}"
 fi
+
+echo -e "${BLUE}Running Django system checks...${NC}"
+if python manage.py check; then
+    echo -e "${GREEN}✅ Django system checks passed${NC}"
+else
+    echo -e "${YELLOW}⚠ Django system checks found issues (see output above)${NC}"
+fi
+cd "$PROJECT_ROOT"
 echo ""
 
 if [ "$USE_DOCKER" = true ]; then
@@ -99,16 +101,12 @@ if [ "$USE_DOCKER" = true ]; then
     # DOCKER MODE
     # ============================================================================
     
-    echo "Access the services at:"
-    echo "  Runtime App: ${GREEN}http://localhost:8081${NC}"
-    echo "  Bugsink:     ${GREEN}http://localhost:8000${NC}"
-    echo "  Prometheus:  ${GREEN}http://localhost:9090${NC}"
-    echo "  Grafana:     ${GREEN}http://localhost:3000${NC}"
-    echo "  cAdvisor:    ${GREEN}http://localhost:8080${NC}"
+    echo "Access the Django Blog Application at:"
+    echo "  Blog App: ${GREEN}http://localhost:8000${NC}"
+    echo "  Admin:    ${GREEN}http://localhost:8000/admin${NC}"
     echo ""
-    echo "Login to Runtime App with:"
-    echo "  Email: ${YELLOW}doc@emmettbrown.com${NC}"
-    echo "  Password: ${YELLOW}fluxcapacitor${NC}"
+    echo "Create a superuser to access the admin panel:"
+    echo "  ${BLUE}cd blogapp && python manage.py createsuperuser${NC}"
     echo ""
     
     # Run docker compose (without --build since setup.sh handles that)
@@ -133,32 +131,49 @@ else
     # LOCAL MODE
     # ============================================================================
     
-    # Build Tailwind CSS before starting server
-    echo -e "${BLUE}Building Tailwind CSS...${NC}"
-    cd runtime
-    if command -v npm &> /dev/null; then
-        npm install --silent 2>&1 | grep -v "npm WARN" || true
-        npm run build:css
-        echo -e "${GREEN}✅ Tailwind CSS built successfully${NC}"
-    else
-        echo -e "${RED}❌ npm not found! Please install Node.js and npm${NC}"
-        echo "   Visit: https://nodejs.org/"
-        exit 1
+    # Install dependencies and check environment
+    echo -e "${BLUE}Checking Python environment...${NC}"
+    cd blogapp
+
+    # Check if virtual environment exists, create if needed
+    if [ ! -d "../venv" ]; then
+        echo -e "${BLUE}Creating virtual environment...${NC}"
+        cd "$PROJECT_ROOT"
+        python -m venv venv
+        cd blogapp
     fi
+
+    # Activate virtual environment
+    source ../venv/bin/activate
+
+    # Install dependencies
+    echo -e "${BLUE}Installing dependencies...${NC}"
+    pip install -r requirements.txt > /dev/null 2>&1
+
+    # Check if .env file exists, create from example if needed
+    if [ ! -f ".env" ]; then
+        echo -e "${BLUE}Creating .env file from example...${NC}"
+        cp .env.example .env
+        echo -e "${YELLOW}⚠ Please update .env file with your configuration${NC}"
+    fi
+
+    # Collect static files
+    echo -e "${BLUE}Collecting static files...${NC}"
+    python manage.py collectstatic --noinput
+
+    echo -e "${GREEN}✅ Setup complete! Starting Django development server...${NC}"
     echo ""
-    
-    echo -e "${GREEN}✅ Setup complete! Starting development server...${NC}"
+    echo "Access the Django Blog Application at:"
+    echo "  Blog App: ${GREEN}http://localhost:8000${NC}"
+    echo "  Admin:    ${GREEN}http://localhost:8000/admin${NC}"
     echo ""
-    echo "Access the application at: ${GREEN}http://localhost:8000${NC}"
-    echo ""
-    echo "Login with:"
-    echo "  Email: ${YELLOW}doc@emmettbrown.com${NC}"
-    echo "  Password: ${YELLOW}fluxcapacitor${NC}"
+    echo "Create a superuser to access the admin panel:"
+    echo "  ${BLUE}python manage.py createsuperuser${NC}"
     echo ""
     echo -e "${BLUE}Press Ctrl+C to stop the server${NC}"
     echo ""
-    
-    # Start the server
-    uv run --python ../venv/bin/python emmett develop
+
+    # Start the Django development server
+    python manage.py runserver
 fi
 
