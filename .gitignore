@@ -281,3 +281,34 @@ webpack-stats.json
 # OAuth tokens (obtained from host machine for testing)
 integration_tests/.oauth_tokens.yaml
 test_results/
+
+# DevPod Development Environment
+.devcontainer/.env.local
+.devcontainer/.env.production
+.devcontainer/bash_history
+.devcontainer/.vscode-server/
+
+# Django Development
+*.sqlite3
+db.sqlite3
+*.db
+local_settings.py
+logs/
+media/
+!media/.gitkeep
+
+# IDE and Editor Files
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
