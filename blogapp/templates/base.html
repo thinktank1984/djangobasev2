@@ -55,6 +55,34 @@
                         <a href="{% url 'landing:pricing' %}" class="inline-flex items-center px-1 pt-1 border-b-2 {% if request.resolver_match.url_name == 'pricing' %}border-black text-black{% else %}border-transparent text-gray hover:border-light-gray hover:text-dark-gray{% endif %} text-sm font-medium uppercase tracking-wider">
                             Pricing
                         </a>
+                        <!-- Blog Navigation -->
+                        <div class="relative" x-data="{ blogOpen: false }">
+                            <button @click="blogOpen = !blogOpen" class="inline-flex items-center px-1 pt-1 border-b-2 {% if request.resolver_match.app_name == 'blog' %}border-black text-black{% else %}border-transparent text-gray hover:border-light-gray hover:text-dark-gray{% endif %} text-sm font-medium uppercase tracking-wider">
+                                Blog
+                                <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div x-show="blogOpen" @click.away="blogOpen = false" class="origin-top-right absolute left-0 mt-2 w-56 bg-white border border-light-gray shadow-lg" role="menu">
+                                <div class="py-1">
+                                    <a href="{% url 'blog:article_list' %}" class="block px-4 py-2 text-sm text-gray hover:bg-light-gray hover:text-black" role="menuitem">
+                                        <i class="fa-solid fa-newspaper mr-2"></i>All Articles
+                                    </a>
+                                    <a href="{% url 'blog:featured_articles' %}" class="block px-4 py-2 text-sm text-gray hover:bg-light-gray hover:text-black" role="menuitem">
+                                        <i class="fa-solid fa-star mr-2"></i>Featured Articles
+                                    </a>
+                                    {% if user.is_authenticated %}
+                                    <a href="{% url 'blog:article_create' %}" class="block px-4 py-2 text-sm text-gray hover:bg-light-gray hover:text-black" role="menuitem">
+                                        <i class="fa-solid fa-pen mr-2"></i>Write Article
+                                    </a>
+                                    {% endif %}
+                                    <div class="border-t border-light-gray"></div>
+                                    <a href="{% url 'blog:search' %}" class="block px-4 py-2 text-sm text-gray hover:bg-light-gray hover:text-black" role="menuitem">
+                                        <i class="fa-solid fa-search mr-2"></i>Search Blog
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="hidden sm:ml-6 sm:flex sm:items-center">
@@ -102,6 +130,33 @@
                 <a href="{% url 'landing:pricing' %}" class="block pl-3 pr-4 py-2 border-l-4 {% if request.resolver_match.url_name == 'pricing' %}border-black text-black{% else %}border-transparent text-gray hover:text-black{% endif %} text-base font-medium uppercase tracking-wider">
                     Pricing
                 </a>
+                <!-- Mobile Blog Navigation -->
+                <div class="border-l-4 {% if request.resolver_match.app_name == 'blog' %}border-black text-black{% else %}border-transparent text-gray{% endif %}">
+                    <div x-data="{ blogMobileOpen: false }">
+                        <button @click="blogMobileOpen = !blogMobileOpen" class="w-full text-left pl-3 pr-4 py-2 text-base font-medium uppercase tracking-wider {% if request.resolver_match.app_name == 'blog' %}text-black{% else %}text-gray hover:text-black{% endif %} flex items-center justify-between">
+                            Blog
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div x-show="blogMobileOpen" class="pl-6 pr-4 py-2 space-y-2">
+                            <a href="{% url 'blog:article_list' %}" class="block py-1 text-sm text-gray hover:text-black">
+                                <i class="fa-solid fa-newspaper mr-2"></i>All Articles
+                            </a>
+                            <a href="{% url 'blog:featured_articles' %}" class="block py-1 text-sm text-gray hover:text-black">
+                                <i class="fa-solid fa-star mr-2"></i>Featured Articles
+                            </a>
+                            {% if user.is_authenticated %}
+                            <a href="{% url 'blog:article_create' %}" class="block py-1 text-sm text-gray hover:text-black">
+                                <i class="fa-solid fa-pen mr-2"></i>Write Article
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'blog:search' %}" class="block py-1 text-sm text-gray hover:text-black">
+                                <i class="fa-solid fa-search mr-2"></i>Search Blog
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="pt-4 pb-3 border-t border-light-gray">
                 {% if user.is_authenticated %}
@@ -205,15 +260,42 @@
                     <h3 class="text-sm font-medium uppercase tracking-wider">Links</h3>
                     <ul class="mt-4 space-y-4">
                         <li>
-                            <a href="#" class="text-base text-gray hover:text-black">
+                            <a href="{% url 'landing:features' %}" class="text-base text-gray hover:text-black">
                                 <i class="fa-solid fa-chevron-right text-xs mr-2"></i>Features
                             </a>
                         </li>
                         <li>
-                            <a href="#" class="text-base text-gray hover:text-black">
+                            <a href="{% url 'landing:pricing' %}" class="text-base text-gray hover:text-black">
                                 <i class="fa-solid fa-chevron-right text-xs mr-2"></i>Pricing
                             </a>
                         </li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium uppercase tracking-wider">Blog</h3>
+                    <ul class="mt-4 space-y-4">
+                        <li>
+                            <a href="{% url 'blog:article_list' %}" class="text-base text-gray hover:text-black">
+                                <i class="fa-solid fa-chevron-right text-xs mr-2"></i>All Articles
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'blog:featured_articles' %}" class="text-base text-gray hover:text-black">
+                                <i class="fa-solid fa-chevron-right text-xs mr-2"></i>Featured Articles
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'blog:search' %}" class="text-base text-gray hover:text-black">
+                                <i class="fa-solid fa-chevron-right text-xs mr-2"></i>Search Blog
+                            </a>
+                        </li>
+                        {% if user.is_authenticated %}
+                        <li>
+                            <a href="{% url 'blog:article_create' %}" class="text-base text-gray hover:text-black">
+                                <i class="fa-solid fa-chevron-right text-xs mr-2"></i>Write Article
+                            </a>
+                        </li>
+                        {% endif %}
                     </ul>
                 </div>
                 <div>
