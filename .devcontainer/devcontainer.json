@@ -1,19 +1,16 @@
 {
   "name": "DjangoBaseV2 Codespace",
-  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "build": {
+    "dockerfile": "Docker/Dockerfile",
+    "context": "."
+  },
   "mounts": [
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
   ],
-  "features": {
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "22"
-    },
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "version": "latest",
-      "installDockerCLI": true
-    }
-  },
-  "postCreateCommand": "bash .devcontainer/setup_codespace.sh",
+  "runArgs": [
+    "--env-file",
+    ".env"
+  ],
   "customizations": {
     "vscode": {
       "extensions": [
@@ -22,5 +19,9 @@
         "ms-azuretools.vscode-docker"
       ]
     }
-  }
+  },
+  "remoteUser": "appuser",
+  "updateContentCommand": "pip install -r requirements.txt",
+  "postCreateCommand": "python3 manage.py collectstatic --noinput || true",
+  "forwardPorts": [8000]
 }
