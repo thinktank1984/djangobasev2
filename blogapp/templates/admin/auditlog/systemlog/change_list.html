@@ -1,0 +1,155 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static admin_list %}
+
+{% block object-tools-items %}
+    {{ block.super }}
+    <li>
+        <a href="{% url 'admin:auditlog_systemlog_changelist' %}" class="addlink">
+            View Log Statistics
+        </a>
+    </li>
+{% endblock %}
+
+{% block content %}
+<div class="module" style="margin-bottom: 20px;">
+    <h2>📊 Log Statistics</h2>
+    <div class="row">
+        <div class="col-md-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Total Logs</h3>
+                </div>
+                <div class="panel-body" style="text-align: center; font-size: 24px; font-weight: bold;">
+                    {{ total_logs|default:0 }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Last 24 Hours</h3>
+                </div>
+                <div class="panel-body" style="text-align: center; font-size: 24px; font-weight: bold; color: #31708f;">
+                    {{ recent_24h|default:0 }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="panel panel-warning">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Last 7 Days</h3>
+                </div>
+                <div class="panel-body" style="text-align: center; font-size: 24px; font-weight: bold; color: #8a6d3b;">
+                    {{ recent_7d|default:0 }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="panel panel-success">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Average/Day</h3>
+                </div>
+                <div class="panel-body" style="text-align: center; font-size: 24px; font-weight: bold; color: #3c763d;">
+                    {% if recent_7d > 0 %}
+                        {{ recent_7h|floatformat:0|default:0 }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if log_stats.by_level %}
+    <div style="margin-top: 20px;">
+        <h4>Logs by Level</h4>
+        <div class="row">
+            {% for level, count in log_stats.by_level.items %}
+            <div class="col-md-2">
+                <span style="display: inline-block; padding: 2px 8px; border-radius: 3px;
+                      {% if level == 'ERROR' %}background-color: #d9534f; color: white;
+                      {% elif level == 'WARN' %}background-color: #f0ad4e; color: white;
+                      {% elif level == 'INFO' %}background-color: #5bc0de; color: white;
+                      {% elif level == 'DEBUG' %}background-color: #777; color: white;
+                      {% elif level == 'CRITICAL' %}background-color: #d9534f; color: white;
+                      {% endif %}">
+                    {{ level }}: {{ count }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if log_stats.by_category %}
+    <div style="margin-top: 20px;">
+        <h4>Logs by Category</h4>
+        <div class="row">
+            {% for category, count in log_stats.by_category.items %}
+            <div class="col-md-2">
+                <span style="display: inline-block; padding: 2px 8px; margin: 2px;
+                       background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 3px;">
+                    {% if category == 'api' %}🌐
+                    {% elif category == 'error' %}❌
+                    {% elif category == 'migration' %}🔄
+                    {% elif category == 'audit' %}📋
+                    {% elif category == 'auth' %}🔐
+                    {% elif category == 'system' %}⚙️
+                    {% endif %}
+                    {{ category|title }}: {{ count }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.panel {
+    margin-bottom: 20px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.05);
+}
+.panel-heading {
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    background-color: #f5f5f5;
+}
+.panel-title {
+    margin-top: 0;
+    margin-bottom: 0;
+    font-size: 16px;
+    color: inherit;
+}
+.panel-body {
+    padding: 15px;
+}
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -15px;
+    margin-left: -15px;
+}
+.col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11, .col-md-12 {
+    position: relative;
+    min-height: 1px;
+    padding-right: 15px;
+    padding-left: 15px;
+}
+.col-md-3 {
+    flex: 0 0 25%;
+    max-width: 25%;
+}
+.col-md-2 {
+    flex: 0 0 16.666667%;
+    max-width: 16.666667%;
+}
+</style>
+
+{{ block.super }}
+{% endblock %}

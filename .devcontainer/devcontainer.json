@@ -1,9 +1,16 @@
 {
   "name": "DjangoBaseV2 Codespace",
   "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "runArgs": ["--privileged"],
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
       "version": "22"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/docker-compose:1": {
+      "version": "latest"
     }
   },
   "postCreateCommand": "bash .devcontainer/setup_codespace.sh",
@@ -11,7 +18,8 @@
     "vscode": {
       "extensions": [
         "ms-python.python",
-        "ms-toolsai.jupyter"
+        "ms-toolsai.jupyter",
+        "ms-azuretools.vscode-docker"
       ]
     }
   }

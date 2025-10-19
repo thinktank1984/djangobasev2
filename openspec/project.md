@@ -2,43 +2,58 @@
 
 ## Purpose
 
-This is an **Emmett Framework demonstration project** featuring "Bloggy", a complete micro-blogging application that showcases Emmett's web development capabilities including:
-- User authentication and authorization
-- Admin-only content creation
-- Blog posts with comments
-- Form handling and validation
-- Database relationships using pyDAL ORM
-- Template inheritance with Renoir
+This is a **Django SaaS boilerplate project** based on [eriktaveras/django-saas-boilerplate](https://github.com/eriktaveras/django-saas-boilerplate). It provides a complete foundation for building Software-as-a-Service applications with Django featuring:
 
-The project serves as both a reference implementation and learning resource for building web applications with the Emmett framework.
+- Multi-tenant architecture support
+- User authentication and authorization with Django Allauth
+- Subscription management and billing capabilities
+- Admin interface for business operations
+- RESTful API endpoints
+- Blog/content management system
+- Form handling and validation
+- Database relationships using Django ORM
+- Template inheritance with Django templates
+
+The project serves as a production-ready starting point for SaaS applications using Django best practices.
 
 ## Tech Stack
 
 ### Core Framework
-- **Emmett 2.5.0+** - Python web framework (similar to Flask but more batteries-included)
-- **Python 3.9+** (3.13+ recommended)
-- **pyDAL** - Database abstraction layer (ORM)
-- **Renoir** - Template engine (Python-like syntax)
-- **PostgreSQL 16** - Primary database backend
+- **Django 5.2+** - Python web framework
+- **Python 3.9+** (3.12+ recommended)
+- **Django ORM** - Database abstraction layer
+- **Django Templates** - Template engine
+- **PostgreSQL** - Primary database backend
+
+### Third-Party Packages
+- **Django Allauth** - Authentication and user management
+- **Django REST Framework** - API development
+- **Celery** - Background task processing
+- **Redis** - Caching and message broker
+- **Whitenoise** - Static file serving
+- **Gunicorn** - WSGI server
 
 ### Infrastructure & Deployment
 - **Docker** - Primary development and deployment environment
-- **Granian** - ASGI server for production
-- **PostgreSQL 16** - Production database (Alpine image)
+- **Docker Compose** - Multi-container orchestration
+- **PostgreSQL** - Production database
+- **Nginx** - Reverse proxy (production)
 
 ### Development Tools
 - **pytest** - Testing framework
 - **coverage** - Test coverage reporting
-- **uv** - Python package manager (for local development fallback)
+- **black** - Code formatting
+- **flake8** - Linting
+- **pre-commit** - Git hooks
 
 ### Additional Capabilities
-- Built-in authentication module (`Auth`)
-- Session management (cookie-based, file-based, Redis-backed)
-- WebSocket support for real-time features
-- RESTful API capabilities via `emmett-rest`
-- Caching (RAM, Disk, Redis, Valkey)
-- Email sending (`Mailer`)
-- Internationalization support
+- Multi-tenant architecture with site-based separation
+- Subscription management with billing integration
+- User role and permission system
+- Email notifications and templates
+- File upload and media management
+- API rate limiting and throttling
+- Comprehensive logging and monitoring
 
 ## Project Conventions
 
@@ -49,106 +64,106 @@ The project serves as both a reference implementation and learning resource for 
 - Use descriptive variable and function names
 - Prefer explicit over implicit
 - Use type hints where beneficial
+- Apply black code formatting
 
-**Emmett-Specific Patterns:**
-- Define models with clear field types and validation rules
-- Use `Field.belongs_to()`, `Field.has_many()` for relationships
-- Validation dictionaries in model classes
-- Async route handlers: `async def route_name():`
-- Use `@app.route()` decorator for routing
-- Return dictionaries from routes for template context
+**Django-Specific Patterns:**
+- Define models with clear field types and constraints
+- Use `ForeignKey`, `ManyToManyField`, `OneToOneField` for relationships
+- Validation in model classes and forms
+- Use Django's class-based views where appropriate
+- Use `@login_required` and permission decorators
+- Return `HttpResponse` or render templates from views
 
 **File Organization:**
-- Main application in `runtime/app.py`
-- Templates in `runtime/templates/`
-- Static files in `runtime/static/`
-- Migrations in `runtime/migrations/`
-- Integration tests in `integration_tests/` (at project root)
+- Main application in `blogapp/`
+- Settings in `blogapp/core/settings.py`
+- Templates in `blogapp/templates/`
+- Static files in `blogapp/static/`
+- Migrations in each app's `migrations/`
+- Management commands in app's `management/commands/`
 
 **Naming Conventions:**
 - Models: PascalCase (e.g., `Post`, `Comment`, `User`)
-- Routes: snake_case function names (e.g., `show_post`, `new_post`)
-- Templates: lowercase with underscores (e.g., `new_post.html`, `layout.html`)
+- Views: PascalCase for class-based, snake_case for function-based
+- Templates: lowercase with underscores (e.g., `post_list.html`, `base.html`)
 - Database fields: snake_case
+- URLs: snake_case
 
 ### Architecture Patterns
 
 **Application Structure:**
-- **Single Application File**: Core app definition in `app.py`
-- **Decorator-Based Routing**: Routes defined with `@app.route()` decorator
-- **Pipeline System**: Request processing through middleware layers
-- **Model-View-Template (MVT)**: Similar to Django/Rails patterns
+- **Project Layout**: Standard Django project structure with `blogapp/` as main project
+- **App-Based Modularity**: Features organized into Django apps
+- **Settings Management**: Environment-based configuration
+- **URL Routing**: Centralized URL configuration with app-specific includes
 
 **Database & ORM:**
-- Use pyDAL ORM for all database operations
-- Define models with `Model` class inheritance
-- Use migrations for schema changes: `emmett migrations generate`, `emmett migrations up`
-- Relationships via `belongs_to`, `has_many`, `has_one`, `refers_to`
-- Validation at model level with `validation` dictionary
-- Callbacks: `before_insert`, `after_insert`, `before_update`, `after_update`, `before_delete`, `after_delete`
+- Use Django ORM for all database operations
+- Define models inheriting from `django.db.models.Model`
+- Use migrations for schema changes: `python manage.py makemigrations`, `python manage.py migrate`
+- Relationships via `ForeignKey`, `ManyToManyField`, `OneToOneField`
+- Validation at model and form level
+- Signals for cross-model operations
 
 **Request/Response Handling:**
-- Routes return dictionaries that become template context
-- Use `request` object for form data, headers, cookies
-- `redirect()` for redirects, `url()` for URL generation
-- Pipeline decorators for request processing
+- Use Django's request-response cycle
+- Class-based views for complex logic, function-based for simple cases
+- Context processors for template data
+- Middleware for cross-cutting concerns
+- Django forms for validation and processing
 
 **Authentication & Authorization:**
-- Built-in `Auth` module for user management
-- `@requires()` decorator for protected routes
+- Django Allauth for user management
+- Login required decorators for protected views
+- Django's built-in permission system
+- Group-based permissions
 - Session-based authentication
-- Group and permission system available
 
 **Form Handling:**
-- `Form` class for generic forms
-- `ModelForm` for database-backed forms (deprecated, use `Form.from_model()`)
-- Async form processing: `form = await Form.from_model(Model)`
-- Built-in validators (presence, email, URL, length, etc.)
+- Django Form classes for validation
+- ModelForm for database-backed forms
+- CSRF protection enabled
+- File upload handling
 
 ### Testing Strategy
 
 **Primary Testing Approach:**
-- **Always use Docker for running tests** - ensures consistent environment across all development machines
+- **Always use Docker for running tests** - ensures consistent environment
 - Use `pytest` as the testing framework
-- Use Emmett's test client for endpoint testing
+- Use Django's test client for endpoint testing
 - Test both success and failure scenarios
 
 **Running Tests:**
 ```bash
 # Docker (REQUIRED - Primary method)
-docker compose -f docker/docker-compose.yaml exec runtime pytest tests.py
+docker compose exec blogapp pytest
 
 # With verbose output
-docker compose -f docker/docker-compose.yaml exec runtime pytest tests.py -v
+docker compose exec blogapp pytest -v
 
 # With coverage
-docker compose -f docker/docker-compose.yaml exec runtime pytest tests.py --cov=runtime --cov-report=term-missing
+docker compose exec blogapp pytest --cov=blogapp --cov-report=term-missing
 
 # Specific test
-docker compose -f docker/docker-compose.yaml exec runtime pytest tests.py -k test_name
-```
-
-**Local Fallback (Only if Docker unavailable):**
-```bash
-./run_tests.sh
+docker compose exec blogapp pytest -k test_name
 ```
 
 **Test Coverage Requirements:**
-- Cover all route handlers
-- Test authentication flows
+- Cover all view functions and classes
+- Test model methods and properties
 - Test form validation (success and failure)
-- Test database operations (CRUD)
-- Test authorization rules
+- Test authentication flows
+- Test API endpoints
 
 **Test Organization:**
-- All tests in `runtime/tests.py`
+- Tests in each app's `tests.py` or `tests/` directory
 - Use fixtures for common setup
 - Clean up test data after tests
 
 ### Git Workflow
 
 **Branching Strategy:**
-- `master` - Production-ready code
+- `main` - Production-ready code
 - Feature branches for new capabilities
 - Use OpenSpec for planning significant changes
 
@@ -163,112 +178,107 @@ docker compose -f docker/docker-compose.yaml exec runtime pytest tests.py -k tes
 - Archive changes after deployment
 - Keep specs in sync with implementation
 
-**Never:**
-- Force push to main/master
-- Skip commit hooks
-- Commit directly without specs for significant changes
-
 ## Domain Context
 
-### Emmett Framework Specifics
+### Django SaaS Boilerplate Specifics
 
-**Documentation Location:**
-- Complete Emmett docs in `/emmett_documentation/`
-- Quick reference: `emmett_documentation/documentation_summary.md`
-- ORM details: `emmett_documentation/docs/orm/`
-- Tutorial: `emmett_documentation/docs/tutorial.md`
-
-**Key Emmett Concepts:**
-- **App Configuration**: Set via `app.config.property = value`
-- **Pipeline**: Middleware system for request processing
-- **Services**: Decorators for JSON/XML output (`@service.json`, `@service.xml`)
-- **Extensions**: Pluggable functionality (Auth, CORS, etc.)
-- **CLI Commands**: Custom commands via `@app.command()`
+**Key Django Concepts:**
+- **Settings Configuration**: Environment-based settings management
+- **Middleware Stack**: Request processing through middleware layers
+- **Class-Based Views**: Reusable view patterns
+- **Custom Management Commands**: Administrative task automation
+- **Signal System**: Event-driven programming
 
 **Common Patterns:**
 ```python
-# Route definition
-@app.route('/posts/<int:post_id>')
-async def show_post(post_id):
-    post = Post.get(post_id)
-    return {'post': post}
+# Model definition
+class Post(models.Model):
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+# View definition
+class PostListView(ListView):
+    model = Post
+    template_name = 'blog/post_list.html'
+    context_object_name = 'posts'
 
 # Form handling
-@app.route('/new', methods=['get', 'post'])
-async def new_post():
-    form = await Form.from_model(Post)
-    if form.accepted:
-        redirect(url('index'))
-    return {'form': form}
+class PostForm(forms.ModelForm):
+    class Meta:
+        model = Post
+        fields = ['title', 'content']
 
-# Authentication
-@app.route('/admin')
-@requires(lambda: auth.user is not None, url('login'))
-async def admin():
-    return {}
+# URL configuration
+path('posts/', PostListView.as_view(), name='post-list')
 ```
 
 **Database Operations:**
 ```python
 # Query all
-posts = Post.all().select()
+posts = Post.objects.all()
 
 # Filter
-posts = Post.where(lambda p: p.published == True).select()
+posts = Post.objects.filter(published=True)
 
 # Get by ID
-post = Post.get(id)
+post = Post.objects.get(id=pk)
 
 # Create
-post = Post.create(title="...", text="...")
+post = Post.objects.create(title="...", content="...")
 
 # Update
-post.update_record(title="New Title")
+post.title = "New Title"
+post.save()
 
 # Delete
-post.delete_record()
+post.delete()
 ```
 
-### Bloggy Application
+### SaaS Application Features
 
-The example application in `runtime/` demonstrates:
-- User registration and login
-- Admin role for content creation
-- Blog post CRUD operations
-- Template inheritance (`layout.html` base template)
-- Static file serving (CSS)
-- Form validation and error handling
+The boilerplate includes:
+- User registration and authentication with email verification
+- Subscription management with different tiers
+- Multi-tenant site management
+- Admin interface for business operations
+- API endpoints for frontend integration
+- Blog/content management system
+- Comprehensive logging and error tracking
 
 ## Important Constraints
 
 ### Technical Constraints
 
-1. **Docker-First Development**: 
+1. **Docker-First Development**:
    - **MUST use Docker for all development and testing**
-   - Docker environment includes all dependencies (Gemini CLI, Python packages, system libraries)
+   - Docker environment includes all dependencies
    - Local scripts are fallback only, not primary workflow
 
-2. **Python Version**: 
+2. **Python Version**:
    - Minimum Python 3.9
-   - Recommended Python 3.13+
+   - Recommended Python 3.12+
 
-3. **Emmett Framework**:
-   - Follow Emmett conventions and patterns
-   - Use pyDAL for ORM (not SQLAlchemy or other ORMs)
-   - Use Renoir for templates (not Jinja2)
-   - Use built-in Auth module (not custom auth)
+3. **Django Framework**:
+   - Follow Django conventions and patterns
+   - Use Django ORM for database operations
+   - Use Django templates for frontend
+   - Use Django Allauth for authentication
 
-4. **Async/Await**:
-   - All route handlers should be async
-   - Use `await` for async operations (forms, database queries in some cases)
+4. **Database**:
+   - PostgreSQL for production
+   - SQLite for development/testing if needed
+   - All schema changes must have migrations
 
-5. **URL Generation**:
-   - Always use `url()` function for URL generation
-   - Never hardcode URLs
+5. **Security**:
+   - Use Django's built-in security features
+   - Environment variables for sensitive data
+   - HTTPS in production
+   - Proper CORS and CSRF configuration
 
 6. **Simplicity First**:
    - Default to <100 lines of new code
-   - Single-file implementations until proven insufficient
+   - Single-app implementations until proven insufficient
    - Avoid frameworks without clear justification
    - Choose boring, proven patterns
 
@@ -281,38 +291,36 @@ The example application in `runtime/` demonstrates:
 ### Deployment Constraints
 
 1. **Docker Deployment**: Application is containerized
-2. **Port 8081**: Default application port
-3. **Environment Variables**: Configuration via environment or config files
+2. **Environment Variables**: Configuration via environment
+3. **Static Files**: Properly served and collected
+4. **Database Migrations**: Applied during deployment
 
 ## External Dependencies
 
 ### Required Services
-- **PostgreSQL 16**: Primary database (runs in Docker)
-- **ASGI Server**: Granian (included)
+- **PostgreSQL**: Primary database (runs in Docker)
+- **Redis**: Caching and message broker
+- **Email Service**: For transactional emails (SMTP)
 
 ### Optional Services
-- **Redis/Valkey**: For session storage and caching (if configured)
-- **SMTP Server**: For email functionality via Mailer
-- **WebSocket Support**: Built into Emmett, no external service needed
+- **Celery Workers**: For background tasks
+- **Nginx**: Reverse proxy and static file serving
+- **Monitoring**: Error tracking and performance monitoring
 
 ### Development Dependencies
 - **Docker & Docker Compose**: Required for consistent development environment
 - **Git**: Version control
-- **Gemini CLI**: Available in Docker for AI assistance
 
 ### Python Package Dependencies
-See `setup/requirements.txt` for complete list:
-- emmett>=2.5.0
-- granian>=1.3.1
-- pytest>=7.0.0
-- coverage>=7.0.0
-- PyYAML
-- And others...
+See `blogapp/requirements.txt` for complete list
 
 ### External Documentation
-- [Emmett Framework](https://emmett.sh/docs) - Official documentation
-- [Emmett GitHub](https://github.com/emmett-framework/emmett) - Source code and issues
-- [pyDAL Documentation](http://www.web2py.com/books/default/chapter/29/06/the-database-abstraction-layer) - ORM reference
+- [Django Documentation](https://docs.djangoproject.com/) - Official documentation
+- [Django Allauth](https://django-allauth.readthedocs.io/) - Authentication documentation
+- [Django REST Framework](https://www.django-rest-framework.org/) - API documentation
 
-### No External APIs
-The current Bloggy application is self-contained and doesn't depend on external APIs or services beyond the database.
+### External APIs
+The application may integrate with external SaaS services:
+- Payment processors (Stripe, etc.)
+- Email services (SendGrid, etc.)
+- Monitoring services (Sentry, etc.)

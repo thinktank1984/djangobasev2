@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'apps.subscriptions',
     'apps.notifications',
     'apps.blog',
+    'apps.auditlog',
 ]
 
 MIDDLEWARE = [
@@ -74,6 +75,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'apps.auditlog.middleware.RequestLoggingMiddleware',
+    'apps.auditlog.middleware.ErrorLoggingMiddleware',
+    'apps.auditlog.middleware.PerformanceLoggingMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -109,6 +113,10 @@ if db_engine == 'django.db.backends.sqlite3':
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': os.path.join(BASE_DIR, os.getenv('DB_NAME', 'db.sqlite3')),
+        },
+        'logs': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'logs', 'logs.sqlite3'),
         }
     }
 else:
@@ -125,6 +133,10 @@ else:
                 'charset': 'utf8',
             },
             'CONN_MAX_AGE': 60,  # Persistent connections
+        },
+        'logs': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'logs', 'logs.sqlite3'),
         }
     }
 
@@ -228,3 +240,79 @@ STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY', '')
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '')
 STRIPE_PRICE_ID = os.getenv('STRIPE_PRICE_ID', '')
+
+# Database routers for logging
+DATABASE_ROUTERS = ['core.db_router.LoggingDatabaseRouter']
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+        'database': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'database': {
+            'level': 'INFO',
+            'class': 'apps.auditlog.handlers.DatabaseLogHandler',
+            'formatter': 'database',
+        },
+        'database_errors': {
+            'level': 'ERROR',
+            'class': 'apps.auditlog.handlers.DatabaseLogHandler',
+            'formatter': 'database',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'database'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console', 'database_errors'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.server': {
+            'handlers': ['console', 'database'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'apps': {
+            'handlers': ['console', 'database'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'auditlog': {
+            'handlers': ['console', 'database'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+    'root': {
+        'handlers': ['console', 'database'],
+        'level': 'INFO',
+    },
+}
