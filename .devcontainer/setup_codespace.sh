@@ -38,7 +38,15 @@ pnpm add -g @anthropic-ai/claude-code @google/gemini-cli
 
 echo "✅ CLI installation complete."
 
-# --- 5️⃣ Add Z.ai GLM 4.6 environment config ----------------------------------
+# --- 5️⃣ Install OpenSpec -----------------------------------------------------
+echo "📦 Installing OpenSpec..."
+if [ -f "/workspaces/djangobasev2/setup/openspec_install.sh" ]; then
+  bash /workspaces/djangobasev2/setup/openspec_install.sh
+else
+  echo "⚠️  OpenSpec installation script not found at /workspaces/djangobasev2/setup/openspec_install.sh"
+fi
+
+# --- 6️⃣ Add Z.ai GLM 4.6 environment config ----------------------------------
 if ! grep -q "ANTHROPIC_BASE_URL" ~/.bashrc 2>/dev/null; then
   echo "🔑 Adding Z.ai GLM 4.6 configuration..."
   cat >> ~/.bashrc <<'EOF'
@@ -54,14 +62,14 @@ else
   echo "✅ Z.ai environment already configured"
 fi
 
-# --- 6️⃣ Verify installation --------------------------------------------------
+# --- 7️⃣ Verify installation --------------------------------------------------
 echo "🎯 Verifying tools..."
 if command -v claude >/dev/null 2>&1; then
   claude --version
 else
   echo "⚠️  'claude' not in PATH yet — open a new terminal or run: source ~/.bashrc"
 fi
-# --- 6️⃣ Create uv virtual environment (venv, Python 3.12) --------------------
+# --- 8️⃣ Create uv virtual environment (venv, Python 3.12) --------------------
 if [ ! -d "venv" ]; then
   echo "🐍 Creating uv virtual environment: ./venv (Python 3.12)"
   uv venv venv --python=python3.12
