@@ -11,3 +11,4 @@ stripe
 channels
 channels-redis
 redis
+psycopg2-binary
