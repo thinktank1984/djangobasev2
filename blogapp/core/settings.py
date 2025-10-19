@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'apps.dashboard',
     'apps.subscriptions',
     'apps.notifications',
+    'apps.blog',
 ]
 
 MIDDLEWARE = [

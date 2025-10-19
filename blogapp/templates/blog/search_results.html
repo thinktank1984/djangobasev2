@@ -1,0 +1,189 @@
+{% extends 'blog/base_blog.html' %}
+{% load static %}
+
+{% block blog_title %}
+    {% if search_query %}Search Results for "{{ search_query }}"{% else %}Search{% endif %}
+{% endblock %}
+
+{% block blog_content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Search Header -->
+    <div class="max-w-4xl mx-auto mb-8">
+        <div class="text-center mb-8">
+            {% if search_query %}
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">
+                Search Results for "{{ search_query }}"
+            </h1>
+            <p class="text-gray-600">
+                Found {{ articles.count }} result{{ articles.count|pluralize }}
+            </p>
+            {% else %}
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">Search Blog</h1>
+            <p class="text-gray-600">
+                Enter keywords to search articles, categories, and tags.
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- Search Form -->
+        <form method="get" action="{% url 'blog:search' %}" class="relative mb-8">
+            <input
+                type="text"
+                name="q"
+                value="{{ search_query }}"
+                placeholder="Search articles, categories, tags..."
+                class="w-full px-4 py-3 pl-12 pr-4 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                autofocus
+            >
+            <svg class="absolute left-4 top-3.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            <button type="submit" class="absolute right-2 top-2 px-4 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                Search
+            </button>
+        </form>
+
+        <!-- Quick Links -->
+        {% if not search_query %}
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Popular Categories</h3>
+                <div class="space-y-2">
+                    {% for category in categories %}
+                    <a href="{% url 'blog:category_detail' category.slug %}"
+                       class="block text-blue-600 hover:text-blue-700">
+                        {{ category.name }} ({{ category.article_count }})
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Popular Tags</h3>
+                <div class="flex flex-wrap gap-2">
+                    {% for tag in tags %}
+                    <a href="{% url 'blog:tag_detail' tag.slug %}"
+                       class="tag-pill px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-blue-100">
+                        #{{ tag.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Search Tips</h3>
+                <ul class="space-y-2 text-sm text-gray-600">
+                    <li>• Use specific keywords</li>
+                    <li>• Try different combinations</li>
+                    <li>• Search by author name</li>
+                    <li>• Browse categories and tags</li>
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Search Results -->
+    {% if search_query %}
+    <div class="max-w-4xl mx-auto">
+        {% if articles %}
+        <div class="space-y-6">
+            {% for article in articles %}
+            <article class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex-1">
+                        <h2 class="text-xl font-bold text-gray-900 mb-2">
+                            <a href="{{ article.get_absolute_url }}" class="hover:text-blue-600 transition-colors">
+                                {{ article.title }}
+                            </a>
+                        </h2>
+                        <p class="text-gray-600 mb-3">{{ article.excerpt|truncatewords:30 }}</p>
+
+                        <div class="flex items-center gap-4 text-sm text-gray-500">
+                            {% if article.category %}
+                            <a href="{% url 'blog:category_detail' article.category.slug %}"
+                               class="text-blue-600 hover:text-blue-700">
+                                {{ article.category.name }}
+                            </a>
+                            {% endif %}
+                            <span>By {{ article.author.username }}</span>
+                            <span>{{ article.published_at|date:"M d, Y" }}</span>
+                            <span>{{ article.read_time_minutes }} min read</span>
+                        </div>
+
+                        {% if article.tags.all %}
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            {% for tag in article.tags.all %}
+                            <a href="{% url 'blog:tag_detail' tag.slug %}"
+                               class="tag-pill px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-full hover:bg-blue-100">
+                                #{{ tag.name }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {% if article.featured_image %}
+                    <div class="ml-4 flex-shrink-0">
+                        <img src="{{ article.featured_image.url }}" alt="{{ article.title }}"
+                             class="w-24 h-24 object-cover rounded-lg">
+                    </div>
+                    {% endif %}
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination would go here if implemented -->
+        {% else %}
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.08-2.33"></path>
+            </svg>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No results found</h3>
+            <p class="text-gray-600 mb-6">
+                We couldn't find any articles matching "{{ search_query }}".
+            </p>
+            <div class="space-y-2">
+                <p class="text-sm text-gray-500">Try:</p>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• Using different keywords</li>
+                    <li>• Checking your spelling</li>
+                    <li>• Using more general terms</li>
+                    <li>• Browsing our categories and tags below</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Show categories and tags when no results -->
+        <div class="mt-12 grid md:grid-cols-2 gap-8">
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Browse Categories</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    {% for category in categories %}
+                    <a href="{% url 'blog:category_detail' category.slug %}"
+                       class="flex items-center justify-between p-3 bg-white rounded-lg hover:shadow-md transition-shadow">
+                        <span class="text-gray-700">{{ category.name }}</span>
+                        <span class="text-sm text-gray-500">{{ category.article_count }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Browse Tags</h3>
+                <div class="flex flex-wrap gap-2">
+                    {% for tag in tags %}
+                    <a href="{% url 'blog:tag_detail' tag.slug %}"
+                       class="tag-pill px-3 py-1 text-sm bg-white text-gray-700 rounded-full hover:bg-blue-100 hover:text-blue-700 border border-gray-200">
+                        #{{ tag.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
