@@ -100,20 +100,32 @@ ASGI_APPLICATION = 'core.asgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
-        'NAME': os.getenv('DB_NAME', 'djangobase'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
-        'OPTIONS': {
-            'charset': 'utf8',
-        },
-        'CONN_MAX_AGE': 60,  # Persistent connections
+# Database configuration
+db_engine = os.getenv('DB_ENGINE', 'django.db.backends.sqlite3')
+
+if db_engine == 'django.db.backends.sqlite3':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, os.getenv('DB_NAME', 'db.sqlite3')),
+        }
     }
-}
+else:
+    # PostgreSQL configuration
+    DATABASES = {
+        'default': {
+            'ENGINE': db_engine,
+            'NAME': os.getenv('DB_NAME', 'djangobase'),
+            'USER': os.getenv('DB_USER', 'postgres'),
+            'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+            'OPTIONS': {
+                'charset': 'utf8',
+            },
+            'CONN_MAX_AGE': 60,  # Persistent connections
+        }
+    }
 
 
 # Password validation
@@ -172,13 +184,13 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-SITE_ID = 1
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
-ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True
-ACCOUNT_UNIQUE_EMAIL = True
+SITE_ID = int(os.getenv('SITE_ID', 1))
+ACCOUNT_EMAIL_REQUIRED = os.getenv('ACCOUNT_EMAIL_REQUIRED', 'True').lower() == 'true'
+ACCOUNT_USERNAME_REQUIRED = os.getenv('ACCOUNT_USERNAME_REQUIRED', 'False').lower() == 'true'
+ACCOUNT_AUTHENTICATION_METHOD = os.getenv('ACCOUNT_AUTHENTICATION_METHOD', 'email')
+ACCOUNT_EMAIL_VERIFICATION = os.getenv('ACCOUNT_EMAIL_VERIFICATION', 'none')
+ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = os.getenv('ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE', 'True').lower() == 'true'
+ACCOUNT_UNIQUE_EMAIL = os.getenv('ACCOUNT_UNIQUE_EMAIL', 'True').lower() == 'true'
 
 # Email configuration
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
@@ -193,15 +205,22 @@ LOGIN_REDIRECT_URL = '/dashboard'
 LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = 'account_login'
 
-# Channels configuration
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [('127.0.0.1', 6379)],
+# Channels configuration (use in-memory layer for development when Redis is not available)
+if os.getenv('REDIS_HOST', 'localhost') == 'localhost' and DEBUG:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
         },
-    },
-}
+    }
+else:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [(os.getenv('REDIS_HOST', 'localhost'), int(os.getenv('REDIS_PORT', 6379)))],
+            },
+        },
+    }
 
 # Stripe settings
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY', '')

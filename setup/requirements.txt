@@ -101,10 +101,34 @@ colorlog>=6.8.0             # Colored console logs
 # ============================================================================
 
 # Database drivers
-psycopg2-binary>=2.9.0  # PostgreSQL adapter for pyDAL (primary database)
+psycopg2-binary>=2.9.0  # PostgreSQL adapter for pyDAL (primary database) / Django
 pymysql>=1.1.0          # MySQL adapter (optional)
 redis>=5.0.0            # Redis client
 valkey>=5.0.0           # Valkey client (Redis-compatible, open-source alternative)
+
+# ============================================================================
+# Django Framework (Optional - for Django projects)
+# ============================================================================
+
+# Core Django
+Django>=5.0.0                           # Django web framework
+python-dotenv>=1.0.0                    # Environment variable management
+whitenoise>=6.6.0                       # Static file serving for production
+gunicorn>=21.2.0                        # WSGI HTTP server
+
+# Django Extensions & Packages
+django-allauth>=63.0.0                  # Authentication system
+django-tailwind>=3.8.0                  # Tailwind CSS integration
+django-htmx>=1.17.0                     # HTMX integration
+django-crispy-forms>=2.1               # Form rendering with Bootstrap/Tailwind
+crispy-tailwind>=0.9.0                  # Tailwind CSS for crispy forms
+
+# Real-time & Background Tasks
+channels>=4.0.0                         # Django Channels for WebSockets
+channels-redis>=4.1.0                   # Redis channel layer for Django Channels
+
+# Third-party Integrations
+stripe>=7.5.0                           # Stripe payment processing
 
 # ============================================================================
 # API Enhancements
