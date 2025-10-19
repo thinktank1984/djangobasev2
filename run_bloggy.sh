@@ -88,6 +88,35 @@ for arg in "$@"; do
     esac
 done
 
+# Function to check if Docker is available
+check_docker() {
+    if ! command -v docker &> /dev/null; then
+        echo -e "${RED}❌ Docker is not installed or not in PATH${NC}"
+        echo ""
+        echo -e "${BLUE}Please install Docker:${NC}"
+        echo "  • Ubuntu/Debian: sudo apt-get install docker.io docker-compose"
+        echo "  • macOS: Download Docker Desktop from docker.com"
+        echo "  • Windows: Download Docker Desktop from docker.com"
+        echo "  • Or follow: https://docs.docker.com/get-docker/"
+        echo ""
+        echo -e "${YELLOW}Alternative: Use local development mode:${NC}"
+        echo "  ${BLUE}./run_bloggy.sh --local${NC}"
+        return 1
+    fi
+
+    if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
+        echo -e "${RED}❌ Docker Compose is not installed${NC}"
+        echo ""
+        echo -e "${BLUE}Please install Docker Compose:${NC}"
+        echo "  • Ubuntu/Debian: sudo apt-get install docker-compose"
+        echo "  • Or follow: https://docs.docker.com/compose/install/"
+        echo ""
+        return 1
+    fi
+
+    return 0
+}
+
 # Function to check if Docker containers are built
 check_docker_images() {
     echo -e "${BLUE}Checking Docker images...${NC}"
@@ -545,10 +574,70 @@ fi
 echo -e "${BLUE}🔧 Default Setup: Building and starting Django Blog Application...${NC}"
 echo ""
 
-# Display requirements (same as setup command)
+# Check Docker availability first
+if ! check_docker; then
+    echo -e "${RED}❌ Cannot proceed with Docker setup${NC}"
+    echo -e "${YELLOW}💡 Falling back to local development mode${NC}"
+    echo ""
+
+    # Switch to local setup
+    USE_DOCKER=false
+    COMMAND="setup"
+
+    # Run local setup
+    echo -e "${BLUE}💻 Local Setup Workflow:${NC}"
+    echo ""
+
+    # Setup virtual environment
+    echo -e "${BLUE}Step 1: Setting up Python environment...${NC}"
+    if [ ! -d "venv" ]; then
+        python -m venv venv
+        echo -e "${GREEN}✅ Virtual environment created${NC}"
+    else
+        echo -e "${GREEN}✅ Virtual environment already exists${NC}"
+    fi
+
+    # Activate virtual environment
+    source venv/bin/activate
+
+    # Install dependencies
+    echo -e "${BLUE}Step 2: Installing dependencies...${NC}"
+    pip install --upgrade pip setuptools wheel
+    pip install -r setup/requirements.txt
+    pip install -r blogapp/requirements.txt
+    echo -e "${GREEN}✅ Dependencies installed${NC}"
+
+    # Run migrations and setup
+    echo -e "${BLUE}Step 3: Running database migrations...${NC}"
+    cd blogapp
+    python manage.py migrate
+    echo -e "${GREEN}✅ Migrations applied successfully${NC}"
+
+    # Create sample data
+    echo -e "${BLUE}Step 4: Creating sample data...${NC}"
+    python create_sample_data.py
+    echo -e "${GREEN}✅ Sample data created${NC}"
+
+    # Collect static files
+    echo -e "${BLUE}Step 5: Collecting static files...${NC}"
+    python manage.py collectstatic --noinput
+    echo -e "${GREEN}✅ Static files collected${NC}"
+
+    echo ""
+    echo -e "${GREEN}🎉 Local setup completed successfully!${NC}"
+    echo ""
+    echo "Next steps:"
+    echo "  1. Run the application: ${BLUE}./run_bloggy.sh --run${NC}"
+    echo "  2. Access at: ${GREEN}http://localhost:8000${NC}"
+    echo "  3. Admin panel: ${GREEN}http://localhost:8000/admin${NC}"
+    echo ""
+    exit 0
+fi
+
+# Docker is available, proceed with Docker setup
 echo -e "${BLUE}📋 System Requirements:${NC}"
-echo "  • Docker Desktop or Docker Engine"
-echo "  • Docker Compose"
+echo "  ✅ Docker Desktop or Docker Engine (Found)"
+echo "  ✅ Docker Compose (Found)"
 echo "  • Python 3.9+ (for local development)"
 echo "  • Git"
 echo "  • At least 4GB RAM"
