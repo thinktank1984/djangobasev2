@@ -217,7 +217,7 @@ def search_articles(request):
     context = {
         'articles': articles,
         'search_query': query or '',
-        'categories': Category.objects.annotate(article_count=Count('articles')).filter(article_count__gt=0),
+        'categories': Category.objects.annotate(article_count=Count('article')).filter(article_count__gt=0),
         'tags': Tag.objects.annotate(article_count=Count('articles')).filter(article_count__gt=0)[:20],
     }
 
