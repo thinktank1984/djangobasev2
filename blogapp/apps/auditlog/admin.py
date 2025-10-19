@@ -50,7 +50,7 @@ class SystemLogAdmin(admin.ModelAdmin):
     readonly_fields = [
         'level', 'category', 'message', 'timestamp', 'user_id',
         'object_id', 'metadata_formatted', 'request_id', 'ip_address',
-        'user_agent', 'created_display', 'metadata_json_pretty'
+        'user_agent', 'metadata_json_pretty'
     ]
 
     # Show fieldsets for better organization

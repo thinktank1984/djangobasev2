@@ -105,7 +105,7 @@ class DatabaseLogHandler(logging.Handler):
                 request_id=context.get('request_id'),
                 ip_address=context.get('ip_address'),
                 user_agent=context.get('user_agent'),
-                timestamp=timezone.datetime.fromtimestamp(record.created, tz=timezone.utc)
+                timestamp=timezone.datetime.fromtimestamp(record.created, tz=timezone.timezone.utc)
             )
 
         except Exception:

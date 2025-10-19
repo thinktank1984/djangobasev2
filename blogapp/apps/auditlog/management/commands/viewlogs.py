@@ -6,7 +6,7 @@ import argparse
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Q, Count
 
 from apps.auditlog.models import SystemLog
 
@@ -237,7 +237,7 @@ class Command(BaseCommand):
         self.stdout.write('Top Users (by log count):')
         top_users = SystemLog.objects.filter(user_id__isnull=False) \
                                    .values('user_id') \
-                                   .annotate(count=models.Count('id')) \
+                                   .annotate(count=Count('id')) \
                                    .order_by('-count')[:5]
 
         for user_stat in top_users:
