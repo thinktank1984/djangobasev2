@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Presence Example</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{% static 'js/websocket-client.js' %}"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-6">Real-time User Presence</h1>
+
+        <!-- Connection Status -->
+        <div id="connection-status" class="mb-6 p-4 rounded-lg bg-gray-200">
+            <div class="flex items-center">
+                <div id="status-indicator" class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                <span id="status-text">Disconnected</span>
+            </div>
+        </div>
+
+        <!-- Online Users -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Online Users</h2>
+                <span id="online-count" class="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold">0</span>
+            </div>
+            <div id="online-users" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <p class="text-gray-500 col-span-full text-center py-8">No users online</p>
+            </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="bg-white rounded-lg shadow p-6 mt-6">
+            <h2 class="text-xl font-bold mb-4">Activity Log</h2>
+            <div id="activity-log" class="space-y-2 max-h-64 overflow-y-auto">
+                <p class="text-gray-500 text-center py-4">No activity yet</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize presence client
+        const presenceClient = new PresenceClient(
+            // onUserOnline
+            function(userData) {
+                console.log('User came online:', userData);
+                addOnlineUser(userData);
+                addActivityLog(`${userData.username} came online`, 'online');
+            },
+            // onUserOffline
+            function(userData) {
+                console.log('User went offline:', userData);
+                removeOnlineUser(userData.user_id);
+                addActivityLog(`${userData.username} went offline`, 'offline');
+            },
+            // onOnlineUsers
+            function(users) {
+                console.log('Received online users list:', users);
+                updateOnlineUsersList(users);
+            }
+        );
+
+        let onlineUsers = [];
+
+        // Connection status management
+        function updateConnectionStatus(isConnected) {
+            const indicator = document.getElementById('status-indicator');
+            const text = document.getElementById('status-text');
+
+            if (isConnected) {
+                indicator.className = 'w-3 h-3 bg-green-500 rounded-full mr-2';
+                text.textContent = 'Connected';
+            } else {
+                indicator.className = 'w-3 h-3 bg-red-500 rounded-full mr-2';
+                text.textContent = 'Disconnected';
+            }
+        }
+
+        // Add online user to the list
+        function addOnlineUser(userData) {
+            // Check if user already exists
+            if (onlineUsers.find(user => user.user_id === userData.user_id)) {
+                return;
+            }
+
+            onlineUsers.push(userData);
+            updateOnlineUsersDisplay();
+        }
+
+        // Remove online user from the list
+        function removeOnlineUser(userId) {
+            onlineUsers = onlineUsers.filter(user => user.user_id !== userId);
+            updateOnlineUsersDisplay();
+
+            // Remove user element from DOM
+            const userElement = document.getElementById(`user-${userId}`);
+            if (userElement) {
+                userElement.remove();
+            }
+        }
+
+        // Update online users list
+        function updateOnlineUsersList(users) {
+            onlineUsers = users;
+            updateOnlineUsersDisplay();
+        }
+
+        // Update online users display
+        function updateOnlineUsersDisplay() {
+            const usersContainer = document.getElementById('online-users');
+            const onlineCount = document.getElementById('online-count');
+
+            onlineCount.textContent = onlineUsers.length;
+
+            if (onlineUsers.length === 0) {
+                usersContainer.innerHTML = '<p class="text-gray-500 col-span-full text-center py-8">No users online</p>';
+                return;
+            }
+
+            usersContainer.innerHTML = '';
+
+            onlineUsers.forEach(user => {
+                const userElement = document.createElement('div');
+                userElement.id = `user-${user.user_id}`;
+                userElement.className = 'flex items-center p-3 bg-green-50 border border-green-200 rounded-lg';
+
+                const displayName = user.first_name && user.last_name
+                    ? `${user.first_name} ${user.last_name}`
+                    : user.username;
+
+                userElement.innerHTML = `
+                    <div class="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-900">${displayName}</p>
+                        <p class="text-sm text-gray-600">@${user.username}</p>
+                    </div>
+                    <span class="text-xs text-green-600 font-medium">Online</span>
+                `;
+
+                usersContainer.appendChild(userElement);
+            });
+        }
+
+        // Add activity to log
+        function addActivityLog(message, type) {
+            const logContainer = document.getElementById('activity-log');
+
+            // Clear "no activity" message if present
+            if (logContainer.querySelector('.text-gray-500')) {
+                logContainer.innerHTML = '';
+            }
+
+            const logEntry = document.createElement('div');
+            logEntry.className = `flex items-center p-2 rounded ${
+                type === 'online' ? 'bg-green-50' : 'bg-gray-50'
+            }`;
+
+            const icon = type === 'online' ? '↑' : '↓';
+            const iconColor = type === 'online' ? 'text-green-600' : 'text-gray-600';
+
+            logEntry.innerHTML = `
+                <span class="${iconColor} mr-2">${icon}</span>
+                <span class="text-sm text-gray-700">${message}</span>
+                <span class="text-xs text-gray-500 ml-auto">${new Date().toLocaleTimeString()}</span>
+            `;
+
+            logContainer.insertBefore(logEntry, logContainer.firstChild);
+
+            // Keep only last 50 activities
+            while (logContainer.children.length > 50) {
+                logContainer.removeChild(logContainer.lastChild);
+            }
+        }
+
+        // Set up WebSocket event handlers
+        presenceClient.onOpen = function() {
+            updateConnectionStatus(true);
+            addActivityLog('Connected to presence channel', 'online');
+        };
+
+        presenceClient.onClose = function() {
+            updateConnectionStatus(false);
+            addActivityLog('Disconnected from presence channel', 'offline');
+        };
+
+        presenceClient.onError = function() {
+            updateConnectionStatus(false);
+            addActivityLog('Connection error', 'offline');
+        };
+
+        // Connect to WebSocket
+        presenceClient.connect();
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            presenceClient.disconnect();
+        });
+
+        // Simulate some activity for demo purposes
+        setInterval(function() {
+            if (presenceClient.isConnected() && Math.random() > 0.8) {
+                // Randomly add/remove a demo user
+                if (Math.random() > 0.5) {
+                    addOnlineUser({
+                        user_id: 999 + Math.floor(Math.random() * 100),
+                        username: `demo_user_${Math.floor(Math.random() * 1000)}`,
+                        first_name: 'Demo',
+                        last_name: 'User'
+                    });
+                } else {
+                    if (onlineUsers.length > 0) {
+                        const randomUser = onlineUsers[Math.floor(Math.random() * onlineUsers.length)];
+                        if (randomUser.user_id > 998) { // Only remove demo users
+                            removeOnlineUser(randomUser.user_id);
+                        }
+                    }
+                }
+            }
+        }, 10000); // Every 10 seconds
+    </script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Dashboard Example</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{% static 'js/websocket-client.js' %}"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-6">Real-time Dashboard</h1>
+
+        <!-- Connection Status -->
+        <div id="connection-status" class="mb-6 p-4 rounded-lg bg-gray-200">
+            <div class="flex items-center">
+                <div id="status-indicator" class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                <span id="status-text">Disconnected</span>
+            </div>
+        </div>
+
+        <!-- Dashboard Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold mb-2">Total Subscriptions</h3>
+                <p id="total-subscriptions" class="text-3xl font-bold text-blue-600">0</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold mb-2">Active Subscriptions</h3>
+                <p id="active-subscriptions" class="text-3xl font-bold text-green-600">0</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-lg font-semibold mb-2">Total Revenue</h3>
+                <p id="total-revenue" class="text-3xl font-bold text-purple-600">$0.00</p>
+            </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-bold mb-4">Notifications</h2>
+            <div id="notifications" class="space-y-2">
+                <p class="text-gray-500">No notifications yet</p>
+            </div>
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="mt-6 space-x-4">
+            <button id="refresh-dashboard" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                Refresh Dashboard
+            </button>
+            <button id="send-test-notification" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                Send Test Notification
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize dashboard client
+        const dashboardClient = new DashboardClient(
+            // onDashboardUpdate
+            function(data) {
+                console.log('Dashboard update received:', data);
+                updateDashboardStats(data);
+            },
+            // onNotification
+            function(notification) {
+                console.log('Notification received:', notification);
+                addNotification(notification);
+            }
+        );
+
+        // Connection status management
+        function updateConnectionStatus(isConnected) {
+            const indicator = document.getElementById('status-indicator');
+            const text = document.getElementById('status-text');
+
+            if (isConnected) {
+                indicator.className = 'w-3 h-3 bg-green-500 rounded-full mr-2';
+                text.textContent = 'Connected';
+            } else {
+                indicator.className = 'w-3 h-3 bg-red-500 rounded-full mr-2';
+                text.textContent = 'Disconnected';
+            }
+        }
+
+        // Update dashboard statistics
+        function updateDashboardStats(data) {
+            document.getElementById('total-subscriptions').textContent = data.total_subscriptions || 0;
+            document.getElementById('active-subscriptions').textContent = data.active_subscriptions || 0;
+            document.getElementById('total-revenue').textContent = `$${data.total_revenue || '0.00'}`;
+
+            if (data.last_updated) {
+                addNotification({
+                    type: 'info',
+                    message: `Dashboard updated at ${new Date(data.last_updated).toLocaleString()}`
+                });
+            }
+        }
+
+        // Add notification to the UI
+        function addNotification(notification) {
+            const notificationsDiv = document.getElementById('notifications');
+
+            // Clear "no notifications" message if present
+            if (notificationsDiv.querySelector('.text-gray-500')) {
+                notificationsDiv.innerHTML = '';
+            }
+
+            const notificationElement = document.createElement('div');
+            notificationElement.className = `p-3 rounded-lg ${
+                notification.level === 'error' ? 'bg-red-100 text-red-800' :
+                notification.level === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                notification.level === 'success' ? 'bg-green-100 text-green-800' :
+                'bg-blue-100 text-blue-800'
+            }`;
+
+            notificationElement.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="font-semibold">${notification.title || notification.message}</p>
+                        ${notification.message ? `<p class="text-sm mt-1">${notification.message}</p>` : ''}
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-gray-500 hover:text-gray-700">
+                        &times;
+                    </button>
+                </div>
+            `;
+
+            notificationsDiv.insertBefore(notificationElement, notificationsDiv.firstChild);
+
+            // Keep only last 10 notifications
+            while (notificationsDiv.children.length > 10) {
+                notificationsDiv.removeChild(notificationsDiv.lastChild);
+            }
+        }
+
+        // Set up WebSocket event handlers
+        dashboardClient.onOpen = function() {
+            updateConnectionStatus(true);
+            dashboardClient.requestDashboardUpdate();
+        };
+
+        dashboardClient.onClose = function() {
+            updateConnectionStatus(false);
+        };
+
+        dashboardClient.onError = function() {
+            updateConnectionStatus(false);
+        };
+
+        // Button event handlers
+        document.getElementById('refresh-dashboard').addEventListener('click', function() {
+            if (dashboardClient.isConnected()) {
+                dashboardClient.requestDashboardUpdate();
+            } else {
+                addNotification({
+                    type: 'error',
+                    message: 'WebSocket not connected. Please wait for reconnection.'
+                });
+            }
+        });
+
+        document.getElementById('send-test-notification').addEventListener('click', function() {
+            addNotification({
+                type: 'success',
+                message: 'This is a test notification from the frontend.'
+            });
+        });
+
+        // Connect to WebSocket
+        dashboardClient.connect();
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            dashboardClient.disconnect();
+        });
+    </script>
+</body>
+</html>

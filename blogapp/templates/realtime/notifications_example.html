@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Notifications Example</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{% static 'js/websocket-client.js' %}"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-6">Real-time Notifications</h1>
+
+        <!-- Connection Status -->
+        <div id="connection-status" class="mb-6 p-4 rounded-lg bg-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div id="status-indicator" class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                    <span id="status-text">Disconnected</span>
+                </div>
+                <div class="flex items-center">
+                    <span class="mr-2">Unread:</span>
+                    <span id="unread-count" class="bg-red-500 text-white px-2 py-1 rounded-full text-sm font-bold">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">Control Panel</h2>
+            <div class="space-x-4">
+                <button id="refresh-notifications" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                    Refresh Notifications
+                </button>
+                <button id="mark-all-read" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                    Mark All as Read
+                </button>
+                <button id="create-test-notification" class="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600">
+                    Create Test Notification
+                </button>
+            </div>
+        </div>
+
+        <!-- Notifications List -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-bold mb-4">Notifications</h2>
+            <div id="notifications-list" class="space-y-2">
+                <p class="text-gray-500 text-center py-8">No notifications</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize notification client
+        const notificationClient = new NotificationClient(
+            // onNewNotification
+            function(notification) {
+                console.log('New notification received:', notification);
+                addNotificationToList(notification);
+                updateUnreadCount();
+            },
+            // onUnreadCount
+            function(count) {
+                console.log('Unread count updated:', count);
+                updateUnreadCount(count);
+            },
+            // onNotificationRead
+            function(data) {
+                console.log('Notification marked as read:', data);
+                markNotificationAsReadInUI(data.notification_id);
+            }
+        );
+
+        let notifications = [];
+        let unreadCount = 0;
+
+        // Connection status management
+        function updateConnectionStatus(isConnected) {
+            const indicator = document.getElementById('status-indicator');
+            const text = document.getElementById('status-text');
+
+            if (isConnected) {
+                indicator.className = 'w-3 h-3 bg-green-500 rounded-full mr-2';
+                text.textContent = 'Connected';
+            } else {
+                indicator.className = 'w-3 h-3 bg-red-500 rounded-full mr-2';
+                text.textContent = 'Disconnected';
+            }
+        }
+
+        // Update unread count
+        function updateUnreadCount(count) {
+            if (count !== undefined) {
+                unreadCount = count;
+            }
+            document.getElementById('unread-count').textContent = unreadCount;
+        }
+
+        // Add notification to the list
+        function addNotificationToList(notification) {
+            // Add to notifications array
+            notifications.unshift(notification);
+            if (!notification.is_read) {
+                unreadCount++;
+            }
+
+            // Clear "no notifications" message if present
+            const notificationsDiv = document.getElementById('notifications-list');
+            if (notificationsDiv.querySelector('.text-gray-500')) {
+                notificationsDiv.innerHTML = '';
+            }
+
+            // Create notification element
+            const notificationElement = document.createElement('div');
+            notificationElement.id = `notification-${notification.id}`;
+            notificationElement.className = `p-4 rounded-lg border ${
+                notification.is_read ? 'bg-gray-50 border-gray-200' : 'bg-white border-blue-200 shadow-sm'
+            }`;
+
+            const levelColors = {
+                'error': 'text-red-600',
+                'warning': 'text-yellow-600',
+                'success': 'text-green-600',
+                'info': 'text-blue-600'
+            };
+
+            notificationElement.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <div class="flex items-center mb-2">
+                            <span class="text-xs font-semibold ${levelColors[notification.level] || 'text-gray-600'} uppercase">
+                                ${notification.level}
+                            </span>
+                            <span class="text-xs text-gray-500 ml-2">
+                                ${new Date(notification.created_at).toLocaleString()}
+                            </span>
+                            ${!notification.is_read ? '<span class="ml-2 w-2 h-2 bg-blue-500 rounded-full"></span>' : ''}
+                        </div>
+                        <h3 class="font-semibold text-gray-900">${notification.title}</h3>
+                        <p class="text-gray-600 mt-1">${notification.message}</p>
+                    </div>
+                    <div class="flex space-x-2 ml-4">
+                        ${!notification.is_read ? `
+                            <button onclick="markAsRead(${notification.id})" class="text-blue-500 hover:text-blue-700 text-sm">
+                                Mark as read
+                            </button>
+                        ` : ''}
+                        <button onclick="removeNotification(${notification.id})" class="text-gray-500 hover:text-gray-700">
+                            &times;
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            notificationsDiv.insertBefore(notificationElement, notificationsDiv.firstChild);
+
+            // Keep only last 20 notifications
+            while (notificationsDiv.children.length > 20) {
+                const lastChild = notificationsDiv.lastChild;
+                if (lastChild.id) {
+                    const notificationId = parseInt(lastChild.id.replace('notification-', ''));
+                    notifications = notifications.filter(n => n.id !== notificationId);
+                }
+                notificationsDiv.removeChild(lastChild);
+            }
+
+            updateUnreadCount();
+        }
+
+        // Mark notification as read
+        function markAsRead(notificationId) {
+            notificationClient.markAsRead(notificationId);
+        }
+
+        // Mark notification as read in UI
+        function markNotificationAsReadInUI(notificationId) {
+            const notificationElement = document.getElementById(`notification-${notificationId}`);
+            if (notificationElement) {
+                notificationElement.className = 'p-4 rounded-lg border bg-gray-50 border-gray-200';
+
+                // Remove unread indicator and "Mark as read" button
+                const unreadIndicator = notificationElement.querySelector('.bg-blue-500.rounded-full');
+                if (unreadIndicator) {
+                    unreadIndicator.remove();
+                }
+
+                const markAsReadButton = notificationElement.querySelector('button[onclick*="markAsRead"]');
+                if (markAsReadButton) {
+                    markAsReadButton.remove();
+                }
+
+                // Update notifications array
+                const notification = notifications.find(n => n.id === notificationId);
+                if (notification) {
+                    notification.is_read = true;
+                    unreadCount = Math.max(0, unreadCount - 1);
+                    updateUnreadCount();
+                }
+            }
+        }
+
+        // Remove notification from UI
+        function removeNotification(notificationId) {
+            const notificationElement = document.getElementById(`notification-${notificationId}`);
+            if (notificationElement) {
+                notificationElement.remove();
+
+                // Update notifications array
+                const notificationIndex = notifications.findIndex(n => n.id === notificationId);
+                if (notificationIndex !== -1) {
+                    const notification = notifications[notificationIndex];
+                    if (!notification.is_read) {
+                        unreadCount = Math.max(0, unreadCount - 1);
+                        updateUnreadCount();
+                    }
+                    notifications.splice(notificationIndex, 1);
+                }
+            }
+        }
+
+        // Set up WebSocket event handlers
+        notificationClient.onOpen = function() {
+            updateConnectionStatus(true);
+            notificationClient.requestNotifications();
+            notificationClient.requestUnreadCount();
+        };
+
+        notificationClient.onClose = function() {
+            updateConnectionStatus(false);
+        };
+
+        notificationClient.onError = function() {
+            updateConnectionStatus(false);
+        };
+
+        // Button event handlers
+        document.getElementById('refresh-notifications').addEventListener('click', function() {
+            if (notificationClient.isConnected()) {
+                notificationClient.requestNotifications();
+                notificationClient.requestUnreadCount();
+            } else {
+                alert('WebSocket not connected. Please wait for reconnection.');
+            }
+        });
+
+        document.getElementById('mark-all-read').addEventListener('click', function() {
+            if (notificationClient.isConnected()) {
+                notificationClient.markAllAsRead();
+
+                // Update UI immediately
+                document.querySelectorAll('.bg-white.border-blue-200').forEach(element => {
+                    element.className = 'p-4 rounded-lg border bg-gray-50 border-gray-200';
+                    const unreadIndicator = element.querySelector('.bg-blue-500.rounded-full');
+                    if (unreadIndicator) {
+                        unreadIndicator.remove();
+                    }
+                    const markAsReadButton = element.querySelector('button[onclick*="markAsRead"]');
+                    if (markAsReadButton) {
+                        markAsReadButton.remove();
+                    }
+                });
+
+                notifications.forEach(n => n.is_read = true);
+                unreadCount = 0;
+                updateUnreadCount();
+            } else {
+                alert('WebSocket not connected. Please wait for reconnection.');
+            }
+        });
+
+        document.getElementById('create-test-notification').addEventListener('click', function() {
+            // This would typically make an API call to create a notification
+            // For demo purposes, we'll add it to the UI
+            const testNotification = {
+                id: Date.now(),
+                title: 'Test Notification',
+                message: 'This is a test notification created from the frontend.',
+                level: 'info',
+                is_read: false,
+                created_at: new Date().toISOString()
+            };
+
+            addNotificationToList(testNotification);
+        });
+
+        // Connect to WebSocket
+        notificationClient.connect();
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            notificationClient.disconnect();
+        });
+    </script>
+</body>
+</html>
