@@ -12,50 +12,5 @@ else
     exit 1
 fi
 
-echo "🔍 Checking for NVM..."
-
-# Detect and load NVM (common install paths)
-if [ -s "$HOME/.nvm/nvm.sh" ]; then
-    export NVM_DIR="$HOME/.nvm"
-    . "$NVM_DIR/nvm.sh"
-elif [ -s "/usr/local/share/nvm/nvm.sh" ]; then
-    export NVM_DIR="/usr/local/share/nvm"
-    . "$NVM_DIR/nvm.sh"
-else
-    echo "📦 Installing NVM..."
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
-    # Try both common paths after install
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" || {
-        export NVM_DIR="/usr/local/share/nvm"
-        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-    }
-fi
-
-if ! command -v nvm &> /dev/null; then
-    echo "❌ NVM not found even after installation. Please reopen your terminal and re-run this script."
-    exit 1
-fi
-
-echo "⬇️ Installing Node.js v24..."
-nvm install 24
-nvm use 24
-nvm alias default 24
-
-echo "⬆️ Upgrading npm..."
-npm install -g npm
-
-echo "⚙️ Installing Claude Code CLI..."
-npm install -g @anthropic-ai/claude-code
-
-# Verify Claude installation
-if ! command -v claude &> /dev/null; then
-    echo "❌ Failed to install Claude Code. Please try manually:"
-    echo "   npm install -g @anthropic-ai/claude-code"
-    echo "   # OR"
-    echo "   claude doctor  # for diagnostics"
-    exit 1
-fi
-
 echo "🚀 Starting Claude Code..."
 claude --dangerously-skip-permissions
