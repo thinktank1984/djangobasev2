@@ -1,8 +1,8 @@
 {
   "name": "DjangoBaseV2 Codespace",
   "build": {
-    "dockerfile": "Dockerfile",
-    "context": "."
+    "dockerfile": ".devcontainer/Dockerfile",
+    "context": ".."
   },
   "mounts": [
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
@@ -20,8 +20,7 @@
       ]
     }
   },
-  
-  "updateContentCommand": "uv pip install -r requirements.txt",
+  "updateContentCommand": "uv pip install -r setup/requirements.txt",
   "postCreateCommand": "python3 manage.py collectstatic --noinput || true",
   "forwardPorts": [8000]
 }
