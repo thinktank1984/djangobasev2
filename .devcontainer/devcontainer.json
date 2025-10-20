@@ -21,6 +21,6 @@
     }
   },
   "updateContentCommand": "uv pip install -r setup/requirements.txt",
-  "postCreateCommand": "python3 manage.py collectstatic --noinput || true",
+  "postCreateCommand": "python3 manage.py migrate && python3 manage.py collectstatic --noinput || true",
   "forwardPorts": [8000]
 }

@@ -29,7 +29,9 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         python3 python3-pip python3-venv python3-dev \
         curl git build-essential libpq-dev postgresql-client \
-        ca-certificates && \
+        ca-certificates gnupg lsb-release && \
+    # --- Install Docker CLI (for Codespaces) ---
+    apt-get install -y docker-cli && \
     # --- Install Node.js 24.x ---
     curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
     apt-get install -y nodejs && \
@@ -50,7 +52,6 @@ RUN pnpm add -g @anthropic-ai/claude-code @google/gemini-cli @fission-ai/openspe
 # ------------------------------------------------------------
 # 📦 Install Python dependencies
 # ------------------------------------------------------------
-# Copy only requirements to leverage Docker layer caching
 COPY setup/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -73,6 +74,7 @@ USER appuser
 RUN echo "🐍 Python:" $(python3 --version) && \
     echo "🟢 Node:" $(node -v) && \
     echo "📦 pnpm:" $(pnpm -v) && \
+    echo "🐋 Docker CLI:" $(docker --version || echo 'Installed') && \
     echo "🤖 Claude Code CLI:" $(claude --version || echo 'Available after shell login') && \
     echo "✨ Gemini CLI:" $(gemini --version || echo 'Available after shell login')
 
