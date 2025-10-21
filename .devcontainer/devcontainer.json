@@ -1,10 +1,16 @@
 {
   "name": "DjangoBaseV2 Codespace",
+   "build": {
+    "context": "..",
+    "dockerfile": ".devcontainer/Dockerfile"
+  },
+
   "dockerComposeFile": "docker-compose.yml",
   "service": "app",
   "workspaceFolder": "/app",
   "forwardPorts": [8000, 5432],
   "runServices": ["db", "app"],
+
   "customizations": {
     "vscode": {
       "extensions": [
@@ -14,6 +20,7 @@
       ]
     }
   },
+
   "updateContentCommand": "uv pip install -r setup/requirements.txt",
   "postCreateCommand": "python3 manage.py migrate && python3 manage.py collectstatic --noinput || true"
 }
