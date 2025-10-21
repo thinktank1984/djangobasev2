@@ -1,40 +1,34 @@
-version: "3.8"
+version: "3"
 
 services:
   app:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        IMAGE: python:3.11
+
     volumes:
-      - ..:/app:cached
-    working_dir: /app
+      - ..:/workspace:cached
+
+    # Overrides default command so things don't shut down after the process ends.
     command: sleep infinity
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/djangobasev2
-    depends_on:
-      - db
-    ports:
-      - "8000:8000"
-    networks:
-      - backend
+
+    # Runs app on the same network as the database container, allows "forwardPorts" in devcontainer.json function.
+    network_mode: service:db
 
   db:
-    image: postgres:18
+    image: pgvector/pgvector:pg16
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: djangobasev2
-    ports:
-      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - backend
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: LocalPasswordOnly
+
+    # Add "forwardPorts": ["5432"] to **devcontainer.json** to forward PostgreSQL locally.
+    # (Adding the "ports" property to this file will not forward from a Codespace.)
 
 volumes:
-  postgres_data:
-
-networks:
-  backend:
-    driver: bridge
+  postgres-data:

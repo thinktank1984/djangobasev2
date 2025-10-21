@@ -1,8 +1,18 @@
 # ------------------------------------------------------------
-# DjangoBaseV2 Alpine Image
-# Alpine 3.20 + Python 3.12 + Node 24 + uv + pnpm + CLIs
+# 🐋 Base and PostgreSQL Setup (unchanged)
 # ------------------------------------------------------------
-FROM alpine:3.20
+ARG IMAGE=bullseye
+FROM mcr.microsoft.com/devcontainers/${IMAGE}
+
+ENV PYTHONUNBUFFERED=1
+
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get -y install --no-install-recommends postgresql-common \
+    && /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+
+RUN apt-get -y install --no-install-recommends postgresql-client-16 \
+    && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # ------------------------------------------------------------
 # 🌍 Environment
@@ -23,44 +33,45 @@ WORKDIR /app
 # ------------------------------------------------------------
 # 🧩 System Setup
 # ------------------------------------------------------------
-RUN apk add --no-cache \
-    bash curl git build-base libpq-dev postgresql-client \
-    python3 py3-pip py3-virtualenv py3-wheel py3-setuptools \
-    nodejs npm
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bash curl git build-essential libpq-dev \
+    python3 python3-pip python3-venv python3-wheel python3-setuptools \
+    nodejs npm \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ------------------------------------------------------------
 # 🧰 Tools
 # ------------------------------------------------------------
 RUN npm install -g pnpm && \
-    curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    curl -LsSf https://astral.sh/uv/install.sh | bash && \
     mv /root/.local/bin/uv /usr/local/bin/uv && \
     pnpm add -g @anthropic-ai/claude-code @google/gemini-cli @fission-ai/openspec
 
 # ------------------------------------------------------------
-# 📦 Dependencies
+# 📦 Python Dependencies
 # ------------------------------------------------------------
 COPY setup/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # ------------------------------------------------------------
-# 🧱 Project Copy
+# 📁 Project Files
 # ------------------------------------------------------------
 COPY . .
 RUN mkdir -p /app/staticfiles /app/media && chmod -R 777 /app
 
 # ------------------------------------------------------------
-# 👤 User
+# 👤 Non-root User
 # ------------------------------------------------------------
-RUN adduser -D appuser && chown -R appuser:appuser /app
+RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
 
 # ------------------------------------------------------------
-# ✅ Version Check
+# 🧾 Version Check
 # ------------------------------------------------------------
-RUN echo "🐍 Python:" $(python3 --version) && \
-    echo "🟢 Node:" $(node -v) && \
-    echo "📦 pnpm:" $(pnpm -v) && \
-    echo "🐘 psql:" $(psql --version)
+RUN echo "🐍 Python: $(python3 --version)" && \
+    echo "🟢 Node: $(node -v)" && \
+    echo "📦 pnpm: $(pnpm -v)" && \
+    echo "🐘 psql: $(psql --version)"
 
 # ------------------------------------------------------------
 # 💓 Health Check
