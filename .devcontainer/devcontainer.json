@@ -1,19 +1,19 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
-// https://github.com/microsoft/vscode-dev-containers/tree/v0.245.0/containers/python-3
+// For format details, see https://aka.ms/devcontainer.json. 
+// For config options, see https://github.com/microsoft/vscode-dev-containers/tree/main/containers/python-3
 {
 	"name": "python-db-copilot",
 	"dockerComposeFile": "docker-compose.yaml",
 	"service": "app",
 	"workspaceFolder": "/workspace",
+
 	"forwardPorts": [5432],
 	"portsAttributes": {
-		"5432": {"label": "PostgreSQL port", "onAutoForward": "silent"}
+		"5432": { "label": "PostgreSQL port", "onAutoForward": "silent" }
 	},
-	// Configure tool-specific properties.
+
+	// 🧩 VS Code settings and extensions
 	"customizations": {
-		// Configure properties specific to VS Code.
 		"vscode": {
-			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
 				"ms-python.python",
 				"ms-python.vscode-pylance",
@@ -24,7 +24,6 @@
 				"ms-vscode.vscode-node-azure-pack",
 				"mechatroner.rainbow-csv"
 			],
-			// Set *default* container specific settings.json values on container create.
 			"settings": {
 				"python.defaultInterpreterPath": "/usr/local/bin/python",
 				"python.testing.unittestEnabled": false,
@@ -54,9 +53,7 @@
 						"database": "postgres",
 						"username": "<USERNAME>",
 						"askForPassword": true,
-						"pgOptions": {
-							"ssl": true
-						}
+						"pgOptions": { "ssl": true }
 					}
 				],
 				"files.exclude": {
@@ -66,8 +63,10 @@
 			}
 		}
 	},
-	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "pip install -r requirements.txt",
-	// Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+
+	// ✅ Use uv for dependency installation (fast, cache-aware)
+	"postCreateCommand": "if [ -f setup/requirements.txt ]; then uv pip install --system -r setup/requirements.txt; elif [ -f requirements.txt ]; then uv pip install --system -r requirements.txt; fi",
+
+	// Comment out to connect as root instead.
 	"remoteUser": "vscode"
 }
