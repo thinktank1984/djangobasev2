@@ -129,9 +129,6 @@ else:
             'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
             'HOST': os.getenv('DB_HOST', 'localhost'),
             'PORT': os.getenv('DB_PORT', '5432'),
-            'OPTIONS': {
-                'charset': 'utf8',
-            },
             'CONN_MAX_AGE': 60,  # Persistent connections
         },
         'logs': {
@@ -191,18 +188,18 @@ TAILWIND_APP_NAME = 'theme'
 CRISPY_ALLOWED_TEMPLATE_PACKS = 'tailwind'
 CRISPY_TEMPLATE_PACK = 'tailwind'
 
-# Django Allauth configuration
+# Django Allauth configuration (updated to new format)
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 SITE_ID = int(os.getenv('SITE_ID', 1))
-ACCOUNT_EMAIL_REQUIRED = os.getenv('ACCOUNT_EMAIL_REQUIRED', 'True').lower() == 'true'
-ACCOUNT_USERNAME_REQUIRED = os.getenv('ACCOUNT_USERNAME_REQUIRED', 'False').lower() == 'true'
-ACCOUNT_AUTHENTICATION_METHOD = os.getenv('ACCOUNT_AUTHENTICATION_METHOD', 'email')
+
+# New Django Allauth settings format
+ACCOUNT_LOGIN_METHODS = ['email']
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = os.getenv('ACCOUNT_EMAIL_VERIFICATION', 'none')
-ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = os.getenv('ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE', 'True').lower() == 'true'
 ACCOUNT_UNIQUE_EMAIL = os.getenv('ACCOUNT_UNIQUE_EMAIL', 'True').lower() == 'true'
 
 # Email configuration

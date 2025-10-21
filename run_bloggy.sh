@@ -17,14 +17,16 @@ cd "$(dirname "$0")" || exit 1
 PROJECT_ROOT=$(pwd)
 
 # Parse command line arguments
-USE_DOCKER=true      # Default to Docker
+USE_DOCKER=false     # Default to local mode for devcontainer
+USE_POSTGRES=true    # Default to PostgreSQL in local mode
 USE_BACKGROUND=true  # Default to background
-COMMAND="setup"      # Default to setup and build
+COMMAND="run"        # Default to run application
 
 for arg in "$@"; do
     case $arg in
         --local|-l)
             USE_DOCKER=false
+            USE_POSTGRES=true  # PostgreSQL in local mode
             shift
             ;;
         --docker|-d)
@@ -63,7 +65,7 @@ for arg in "$@"; do
             echo "Usage: $0 [OPTIONS] [COMMAND]"
             echo ""
             echo "Commands:"
-            echo "  (none)            Setup and build Docker (default)"
+            echo "  (none)            Run the application (default)"
             echo "  --setup            Setup the application (install deps, migrations)"
             echo "  --run              Run the application only"
             echo "  --migrate          Run database migrations only"
@@ -78,10 +80,10 @@ for arg in "$@"; do
             echo "  --help, -h         Show this help message"
             echo ""
             echo "Examples:"
-            echo "  $0                 # Setup and build Docker (default)"
-            echo "  $0 --postgres      # Setup with PostgreSQL and build Docker"
-            echo "  $0 --run           # Run application only"
-            echo "  $0 --local         # Setup locally"
+            echo "  $0                 # Run application (default)"
+            echo "  $0 --setup         # Setup the application"
+            echo "  $0 --postgres      # Run with PostgreSQL"
+            echo "  $0 --local         # Run locally"
             echo "  $0 --build-only    # Build Docker images only"
             exit 0
             ;;
@@ -422,24 +424,34 @@ if [ "$COMMAND" = "setup" ]; then
         echo -e "${BLUE}💻 Local Setup Workflow:${NC}"
         echo ""
 
-        # Setup virtual environment
-        echo -e "${BLUE}Step 1: Setting up Python environment...${NC}"
-        if [ ! -d "venv" ]; then
-            python -m venv venv
-            echo -e "${GREEN}✅ Virtual environment created${NC}"
+        # Setup virtual environment (skip in devcontainer)
+        if [ -n "$DEVCONTAINER" ] || [ -d ".devcontainer" ]; then
+            echo -e "${BLUE}Step 1: Using devcontainer Python environment...${NC}"
+            echo -e "${GREEN}✅ Dependencies already installed via devcontainer${NC}"
         else
-            echo -e "${GREEN}✅ Virtual environment already exists${NC}"
+            echo -e "${BLUE}Step 1: Setting up Python environment...${NC}"
+            if [ ! -d "venv" ]; then
+                python -m venv venv
+                echo -e "${GREEN}✅ Virtual environment created${NC}"
+            else
+                echo -e "${GREEN}✅ Virtual environment already exists${NC}"
+            fi
+
+            # Activate virtual environment
+            source venv/bin/activate
         fi
 
-        # Activate virtual environment
-        source venv/bin/activate
-
-        # Install dependencies
-        echo -e "${BLUE}Step 2: Installing dependencies...${NC}"
-        pip install --upgrade pip setuptools wheel
-        pip install -r setup/requirements.txt
-        pip install -r blogapp/requirements.txt
-        echo -e "${GREEN}✅ Dependencies installed${NC}"
+        # Install dependencies (skip in devcontainer)
+        if [ -n "$DEVCONTAINER" ] || [ -d ".devcontainer" ]; then
+            echo -e "${BLUE}Step 2: Dependencies already available in devcontainer...${NC}"
+            echo -e "${GREEN}✅ Dependencies ready${NC}"
+        else
+            echo -e "${BLUE}Step 2: Installing dependencies...${NC}"
+            pip install --upgrade pip setuptools wheel
+            pip install -r setup/requirements.txt
+            pip install -r blogapp/requirements.txt
+            echo -e "${GREEN}✅ Dependencies installed${NC}"
+        fi
 
         # Setup PostgreSQL if requested
         if [ "$USE_POSTGRES" = true ]; then
@@ -540,14 +552,18 @@ if [ "$COMMAND" = "run" ]; then
         echo -e "${BLUE}💻 Starting local development server...${NC}"
         cd blogapp
 
-        # Check if virtual environment exists
-        if [ ! -d "../venv" ]; then
-            echo -e "${RED}❌ Virtual environment not found. Run './run_bloggy.sh --setup' first.${NC}"
-            exit 1
-        fi
+        # Check if virtual environment exists (skip in devcontainer)
+        if [ -n "$DEVCONTAINER" ] || [ -d "../.devcontainer" ]; then
+            echo -e "${GREEN}✅ Using devcontainer Python environment${NC}"
+        else
+            if [ ! -d "../venv" ]; then
+                echo -e "${RED}❌ Virtual environment not found. Run './run_bloggy.sh --setup' first.${NC}"
+                exit 1
+            fi
 
-        # Activate virtual environment
-        source ../venv/bin/activate
+            # Activate virtual environment
+            source ../venv/bin/activate
+        fi
 
         # Check if database exists
         if [ ! -f "db.sqlite3" ] && [ "$USE_POSTGRES" != true ]; then
@@ -564,7 +580,17 @@ if [ "$COMMAND" = "run" ]; then
         echo -e "${BLUE}Press Ctrl+C to stop the server${NC}"
         echo ""
 
+        # Kill any existing Django processes on port 8000
+        echo -e "${YELLOW}🔄 Checking for existing Django processes...${NC}"
+        DJANGO_PIDS=$(ps aux | grep "python manage.py runserver" | grep -v grep | awk '{print $2}')
+        if [ -n "$DJANGO_PIDS" ]; then
+            echo -e "${YELLOW}   Found Django processes, stopping them...${NC}"
+            echo "$DJANGO_PIDS" | xargs kill -9 2>/dev/null || true
+            sleep 2
+        fi
+
         # Start the Django development server
+        echo -e "${GREEN}🚀 Starting Django development server...${NC}"
         python manage.py runserver 0.0.0.0:8000
     fi
     exit 0
@@ -588,24 +614,34 @@ if ! check_docker; then
     echo -e "${BLUE}💻 Local Setup Workflow:${NC}"
     echo ""
 
-    # Setup virtual environment
-    echo -e "${BLUE}Step 1: Setting up Python environment...${NC}"
-    if [ ! -d "venv" ]; then
-        python -m venv venv
-        echo -e "${GREEN}✅ Virtual environment created${NC}"
+    # Setup virtual environment (skip in devcontainer)
+    if [ -n "$DEVCONTAINER" ] || [ -d ".devcontainer" ]; then
+        echo -e "${BLUE}Step 1: Using devcontainer Python environment...${NC}"
+        echo -e "${GREEN}✅ Dependencies already installed via devcontainer${NC}"
     else
-        echo -e "${GREEN}✅ Virtual environment already exists${NC}"
+        echo -e "${BLUE}Step 1: Setting up Python environment...${NC}"
+        if [ ! -d "venv" ]; then
+            python -m venv venv
+            echo -e "${GREEN}✅ Virtual environment created${NC}"
+        else
+            echo -e "${GREEN}✅ Virtual environment already exists${NC}"
+        fi
+
+        # Activate virtual environment
+        source venv/bin/activate
     fi
 
-    # Activate virtual environment
-    source venv/bin/activate
-
-    # Install dependencies
-    echo -e "${BLUE}Step 2: Installing dependencies...${NC}"
-    pip install --upgrade pip setuptools wheel
-    pip install -r setup/requirements.txt
-    pip install -r blogapp/requirements.txt
-    echo -e "${GREEN}✅ Dependencies installed${NC}"
+    # Install dependencies (skip in devcontainer)
+    if [ -n "$DEVCONTAINER" ] || [ -d ".devcontainer" ]; then
+        echo -e "${BLUE}Step 2: Dependencies already available in devcontainer...${NC}"
+        echo -e "${GREEN}✅ Dependencies ready${NC}"
+    else
+        echo -e "${BLUE}Step 2: Installing dependencies...${NC}"
+        pip install --upgrade pip setuptools wheel
+        pip install -r setup/requirements.txt
+        pip install -r blogapp/requirements.txt
+        echo -e "${GREEN}✅ Dependencies installed${NC}"
+    fi
 
     # Run migrations and setup
     echo -e "${BLUE}Step 3: Running database migrations...${NC}"
