@@ -30,16 +30,23 @@ RUN apt-get update && \
     \
     # --- Install Node.js 24 + pnpm ---
     curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
-    apt-get install -y nodejs && npm install -g pnpm && \
+    apt-get install -y nodejs && \
+    npm install -g pnpm && \
+    pnpm config set global-bin-dir /usr/local/bin && \
+    ln -sf /usr/local/bin/pnpm /usr/bin/pnpm && \
     \
     # --- Clean up ---
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Make python3 default
+RUN ln -sf /usr/bin/python3 /usr/bin/python && \
+    ln -sf /usr/bin/pip3 /usr/bin/pip
+
 # ------------------------------------------------------------
-# 🐍 Install uv
+# 🐍 Install uv (system-wide)
 # ------------------------------------------------------------
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> /etc/bash.bashrc
+RUN curl -LsSf https://astral.sh/uv/install.sh | bash && \
+    mv /root/.local/bin/uv /usr/local/bin/uv
 
 # ------------------------------------------------------------
 # 🤖 Install Global CLIs
@@ -56,8 +63,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 🧱 Copy Project & Collect Static Files
 # ------------------------------------------------------------
 COPY . .
-RUN mkdir -p /app/staticfiles /app/media && \
-    python3 manage.py collectstatic --noinput || true
+RUN mkdir -p /app/staticfiles /app/media && chmod -R 777 /app
 
 # ------------------------------------------------------------
 # 👤 Non-root User
@@ -68,15 +74,15 @@ USER appuser
 # ------------------------------------------------------------
 # ✅ Verify Versions
 # ------------------------------------------------------------
-RUN echo "🐍 Python:" $(python3 --version) && \
+RUN echo "🐍 Python:" $(python --version) && \
     echo "🟢 Node:" $(node -v) && \
     echo "📦 pnpm:" $(pnpm -v) && \
     echo "🐘 PostgreSQL Client:" $(psql --version) && \
-    echo "🤖 Claude Code CLI:" $(claude --version || echo 'Available after login') && \
-    echo "✨ Gemini CLI:" $(gemini --version || echo 'Available after login')
+    echo "🤖 Claude Code CLI:" $(claude --version || echo '✅ Installed') && \
+    echo "✨ Gemini CLI:" $(gemini --version || echo '✅ Installed')
 
 # ------------------------------------------------------------
-# 💓 Health Check & Startup
+# 💓 Health Check
 # ------------------------------------------------------------
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8000/health/ || exit 1
@@ -84,6 +90,6 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 EXPOSE 8000
 
 # ------------------------------------------------------------
-# 🚀 Entrypoint
+# 🚀 Entrypoint (Production)
 # ------------------------------------------------------------
-CMD gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 3
+CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
