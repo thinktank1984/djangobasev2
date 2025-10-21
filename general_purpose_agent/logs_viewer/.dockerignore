@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+log_viewer.pid
+
+# Git
+.git/
+.gitignore
+
+# Documentation (not needed in container)
+README.md
+USAGE.md
+test_app.py
+
+# Scripts (run.sh uses venv, not needed in Docker)
+run.sh

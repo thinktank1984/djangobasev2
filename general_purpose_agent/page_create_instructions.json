@@ -1,0 +1,15 @@
+{
+    "page_create_instructions": [
+        "Create CRUD pages for the service '{name}' in a Blazor Server application.",
+        "Follow the guidelines in 'agents/crud_services_agents/blazor_server_crud_pages_rules.md'.",
+        "Generate Create page for the service.",
+        "Use Tailwind for styling as specified in the rules.",
+        "Implement proper form validation and error handling.",
+        "IMPORTANT: Create the Pages directory if it doesn't exist, then create the '{name}' subdirectory inside Pages",
+        "Create the page file as Pages/{name}/Create.razor",
+        "Ensure all pages follow Blazor Server best practices.",
+        "Return the generated files as JSON in this format:",
+        "{{ \"Pages/{{name}}/Create.razor\": \"file content here\" }}",
+        "Ensure the generated code follows Blazor Server best practices and compiles successfully."
+    ]
+}
