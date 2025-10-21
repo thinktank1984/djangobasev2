@@ -1,10 +1,13 @@
 {
   "name": "DjangoBaseV2 Codespace",
-  "dockerComposeFile": "docker-compose.yml",
+  "dockerComposeFile": [
+    "./.devcontainer/docker-compose.yml"
+  ],
   "service": "app",
   "workspaceFolder": "/app",
-  "forwardPorts": [8000, 5432],
   "runServices": ["db", "app"],
+  "forwardPorts": [8000, 5432],
+  "shutdownAction": "stopCompose",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -12,6 +15,9 @@
         "ms-toolsai.jupyter",
         "ms-azuretools.vscode-docker"
       ]
+    },
+    "codespaces": {
+      "disableAutomaticConfiguration": true
     }
   },
   "updateContentCommand": "uv pip install -r setup/requirements.txt",
