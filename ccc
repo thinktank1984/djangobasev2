@@ -1,16 +1,5 @@
 #!/usr/bin/env bash
 set -e
 
-echo "🐍 Activating Python virtual environment..."
-if [ -d "venv" ]; then
-    source venv/bin/activate
-    echo "✅ Virtual environment activated"
-else
-    echo "❌ Virtual environment not found. Please create it first:"
-    echo "   python3 -m venv venv"
-    echo "   source venv/bin/activate"
-    exit 1
-fi
-
 echo "🚀 Starting Claude Code..."
 claude --dangerously-skip-permissions

@@ -1,65 +1,120 @@
-version: "3.8"
+version: '3.8'
 
 services:
-  app:
-    build:
-      context: ..
-      dockerfile: .devcontainer/Dockerfile
-      args:
-        IMAGE: python:3.11
-
-    volumes:
-      - ..:/workspace:cached
-
-    # Overrides default command so things don't shut down after the process ends.
-    command: sleep infinity
-
-    # Runs app on the same network as the database container, allows "forwardPorts" in devcontainer.json function.
-    network_mode: service:db
-
   db:
-    image: pgvector/pgvector:pg16
-    restart: unless-stopped
-    volumes:
-      - postgres-dev-data:/var/lib/postgresql/data
-      - ../scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    image: postgres:15-alpine
+    container_name: djangobase_db_prod
+    restart: always
     environment:
-      POSTGRES_DB: djangobase
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+      - ../scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-    # Add "forwardPorts": ["5432"] to **devcontainer.json** to forward PostgreSQL locally.
-    # (Adding the "ports" property to this file will not forward from a Codespace.)
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   redis:
     image: redis:7-alpine
-    restart: unless-stopped
+    container_name: djangobase_redis_prod
+    restart: always
     volumes:
-      - redis-dev-data:/data
-    command: redis-server --appendonly yes
+      - redis_prod_data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    networks:
+      - app-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    restart: unless-stopped
+  web:
+    build:
+      context: ../blogapp
+      dockerfile: Dockerfile.prod
+    container_name: djangobase_web_prod
+    restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      - DEBUG=0
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      - STRIPE_PUBLIC_KEY=${STRIPE_PUBLIC_KEY}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
     volumes:
-      - pgadmin-data:/var/lib/pgadmin
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    networks:
+      - app-network
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:alpine
+    container_name: djangobase_nginx_prod
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ../nginx/conf.d:/etc/nginx/conf.d
+      - static_volume:/var/www/static
+      - media_volume:/var/www/media
+      - ../letsencrypt:/etc/letsencrypt
+    networks:
+      - app-network
+    depends_on:
+      - web
+
+  daphne:
+    build:
+      context: ../blogapp
+      dockerfile: Dockerfile.prod
+    container_name: djangobase_daphne_prod
+    restart: always
+    environment:
+      - DEBUG=0
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    networks:
+      - app-network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: daphne -b 0.0.0.0 -p 8001 core.asgi:application
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
-  postgres-dev-data:
-  redis-dev-data:
-  pgadmin-data:
+  postgres_prod_data:
+  redis_prod_data:
+  static_volume:
+  media_volume:
