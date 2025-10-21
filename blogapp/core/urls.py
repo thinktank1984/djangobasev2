@@ -18,10 +18,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponse
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
+    path('health/', lambda request: HttpResponse('OK'), name='health_check'),
     path('', include('apps.landing.urls')),
     path('blog/', include('apps.blog.urls')),
     path('dashboard/', include('apps.dashboard.urls')),

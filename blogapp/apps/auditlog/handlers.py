@@ -85,14 +85,21 @@ class DatabaseLogHandler(logging.Handler):
                     'traceback': self.formatter.formatException(record.exc_info) if self.formatter else None
                 }
 
-            # Add any extra fields from the record
+            # Add any extra fields from the record (filtering out non-serializable objects)
             for key, value in record.__dict__.items():
                 if key not in ['name', 'msg', 'args', 'levelname', 'levelno', 'pathname',
                               'filename', 'module', 'lineno', 'funcName', 'created',
                               'msecs', 'relativeCreated', 'thread', 'threadName',
                               'processName', 'process', 'getMessage', 'exc_info',
                               'exc_text', 'stack_info', 'category', 'object_id']:
-                    metadata[key] = value
+                    # Only include JSON-serializable values
+                    try:
+                        import json
+                        json.dumps(value)
+                        metadata[key] = value
+                    except (TypeError, ValueError):
+                        # Skip non-serializable objects
+                        pass
 
             # Create SystemLog entry
             SystemLog.objects.create(
