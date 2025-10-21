@@ -271,6 +271,11 @@ run_migrations() {
         # Local migrations
         cd blogapp
 
+        # Create logs directory for database logging
+        echo -e "${BLUE}Creating logs directory...${NC}"
+        mkdir -p logs
+        echo -e "${GREEN}✅ Logs directory created${NC}"
+
         # Setup PostgreSQL if requested
         if [ "$USE_POSTGRES" = true ]; then
             echo -e "${BLUE}Starting PostgreSQL with Docker...${NC}"
@@ -312,7 +317,15 @@ EOF
             cd blogapp
         fi
 
+        # Run migrations for default database
         python manage.py migrate
+        echo -e "${GREEN}✅ Default database migrations completed${NC}"
+
+        # Run migrations for logs database
+        echo -e "${BLUE}Running migrations for logs database...${NC}"
+        python manage.py migrate --database=logs
+        echo -e "${GREEN}✅ Logs database migrations completed${NC}"
+
         echo -e "${BLUE}Creating sample data...${NC}"
         python create_sample_data.py
     fi
@@ -495,18 +508,26 @@ EOF
         fi
 
         # Run migrations and setup
-        echo -e "${BLUE}Step 4: Running database migrations...${NC}"
+        echo -e "${BLUE}Step 4: Creating logs directory...${NC}"
         cd blogapp
+        mkdir -p logs
+        echo -e "${GREEN}✅ Logs directory created${NC}"
+
+        echo -e "${BLUE}Step 5: Running database migrations...${NC}"
         python manage.py migrate
-        echo -e "${GREEN}✅ Migrations applied successfully${NC}"
+        echo -e "${GREEN}✅ Default database migrations completed${NC}"
+
+        echo -e "${BLUE}Step 6: Running logs database migrations...${NC}"
+        python manage.py migrate --database=logs
+        echo -e "${GREEN}✅ Logs database migrations completed${NC}"
 
         # Create sample data
-        echo -e "${BLUE}Step 5: Creating sample data...${NC}"
+        echo -e "${BLUE}Step 7: Creating sample data...${NC}"
         python create_sample_data.py
         echo -e "${GREEN}✅ Sample data created${NC}"
 
         # Collect static files
-        echo -e "${BLUE}Step 6: Collecting static files...${NC}"
+        echo -e "${BLUE}Step 8: Collecting static files...${NC}"
         python manage.py collectstatic --noinput
         echo -e "${GREEN}✅ Static files collected${NC}"
 
@@ -644,18 +665,26 @@ if ! check_docker; then
     fi
 
     # Run migrations and setup
-    echo -e "${BLUE}Step 3: Running database migrations...${NC}"
+    echo -e "${BLUE}Step 3: Creating logs directory...${NC}"
     cd blogapp
+    mkdir -p logs
+    echo -e "${GREEN}✅ Logs directory created${NC}"
+
+    echo -e "${BLUE}Step 4: Running database migrations...${NC}"
     python manage.py migrate
-    echo -e "${GREEN}✅ Migrations applied successfully${NC}"
+    echo -e "${GREEN}✅ Default database migrations completed${NC}"
+
+    echo -e "${BLUE}Step 5: Running logs database migrations...${NC}"
+    python manage.py migrate --database=logs
+    echo -e "${GREEN}✅ Logs database migrations completed${NC}"
 
     # Create sample data
-    echo -e "${BLUE}Step 4: Creating sample data...${NC}"
+    echo -e "${BLUE}Step 6: Creating sample data...${NC}"
     python create_sample_data.py
     echo -e "${GREEN}✅ Sample data created${NC}"
 
     # Collect static files
-    echo -e "${BLUE}Step 5: Collecting static files...${NC}"
+    echo -e "${BLUE}Step 7: Collecting static files...${NC}"
     python manage.py collectstatic --noinput
     echo -e "${GREEN}✅ Static files collected${NC}"
 
