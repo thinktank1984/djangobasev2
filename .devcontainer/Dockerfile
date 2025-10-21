@@ -1,17 +1,21 @@
+# ============================================================
+# 🐋 DjangoBaseV2 Dev Container Image
+# Debian Bullseye + Python 3.12 + Node 24 + PostgreSQL client
+# ============================================================
+
 # ------------------------------------------------------------
-# 🐋 Base and PostgreSQL Setup (unchanged)
+# 🐋 Base and PostgreSQL Setup
 # ------------------------------------------------------------
-ARG IMAGE=bullseye
-FROM mcr.microsoft.com/devcontainers/${IMAGE}
+FROM mcr.microsoft.com/devcontainers/python:3.12-bullseye
 
 ENV PYTHONUNBUFFERED=1
 
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive
 
+# Install PostgreSQL client tools (v16)
 RUN apt-get -y install --no-install-recommends postgresql-common \
-    && /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
-
-RUN apt-get -y install --no-install-recommends postgresql-client-16 \
+    && /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && \
+    apt-get -y install --no-install-recommends postgresql-client-16 \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # ------------------------------------------------------------
@@ -34,15 +38,26 @@ WORKDIR /app
 # 🧩 System Setup
 # ------------------------------------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    bash curl git build-essential libpq-dev \
-    python3 python3-pip python3-venv python3-wheel python3-setuptools \
-    nodejs npm \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    bash curl git build-essential libpq-dev python3-venv python3-wheel python3-setuptools \
+    ca-certificates gnupg && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# ------------------------------------------------------------
+# 🟢 Install Node.js 24 + npm
+# ------------------------------------------------------------
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g npm@latest && \
+    node -v && npm -v
 
 # ------------------------------------------------------------
 # 🧰 Tools
 # ------------------------------------------------------------
-RUN npm install -g pnpm && \
+ENV PNPM_HOME=/usr/local/pnpm
+ENV PATH=$PNPM_HOME:/usr/local/bin:$PATH
+
+RUN mkdir -p "$PNPM_HOME" && \
+    npm install -g pnpm && \
     curl -LsSf https://astral.sh/uv/install.sh | bash && \
     mv /root/.local/bin/uv /usr/local/bin/uv && \
     pnpm add -g @anthropic-ai/claude-code @google/gemini-cli @fission-ai/openspec
@@ -71,6 +86,7 @@ USER appuser
 RUN echo "🐍 Python: $(python3 --version)" && \
     echo "🟢 Node: $(node -v)" && \
     echo "📦 pnpm: $(pnpm -v)" && \
+    echo "💡 uv: $(uv --version)" && \
     echo "🐘 psql: $(psql --version)"
 
 # ------------------------------------------------------------
