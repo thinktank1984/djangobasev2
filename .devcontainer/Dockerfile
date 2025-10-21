@@ -1,6 +1,6 @@
 # ============================================================
 # 🐋 DjangoBaseV2 Dev Container Image
-# Debian Bullseye + Python 3.12 + Node 24 + PostgreSQL client
+# Debian Bullseye + Python 3.12 + Node 24 + PostgreSQL client + uv
 # ============================================================
 
 # ------------------------------------------------------------
@@ -26,6 +26,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PNPM_HOME=/usr/local/pnpm \
     PATH=$PNPM_HOME:/usr/local/bin:$PATH \
     DEBIAN_FRONTEND=noninteractive \
+    UV_CACHE_DIR=/root/.cache/uv \
+    UV_LINK_MODE=copy \
     ANTHROPIC_BASE_URL="https://api.z.ai/api/anthropic" \
     ANTHROPIC_AUTH_TOKEN="b0d8bc10b7274fde891719c0f5fae80a.227yTm8wFgBMcyJW" \
     ANTHROPIC_DEFAULT_OPUS_MODEL="glm-4.6" \
@@ -51,22 +53,27 @@ RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
     node -v && npm -v
 
 # ------------------------------------------------------------
-# 🧰 Tools
+# ⚡ Install uv (Python package manager)
+# ------------------------------------------------------------
+RUN curl -LsSf https://astral.sh/uv/install.sh | bash && \
+    mv /root/.local/bin/uv /usr/local/bin/uv && \
+    uv --version
+
+# ------------------------------------------------------------
+# 🧰 Tools (pnpm + AI CLIs)
 # ------------------------------------------------------------
 ENV PNPM_HOME=/usr/local/pnpm
 ENV PATH=$PNPM_HOME:/usr/local/bin:$PATH
 
 RUN mkdir -p "$PNPM_HOME" && \
     npm install -g pnpm && \
-    curl -LsSf https://astral.sh/uv/install.sh | bash && \
-    mv /root/.local/bin/uv /usr/local/bin/uv && \
     pnpm add -g @anthropic-ai/claude-code @google/gemini-cli @fission-ai/openspec
 
 # ------------------------------------------------------------
-# 📦 Python Dependencies
+# 📦 Python Dependencies (using uv)
 # ------------------------------------------------------------
 COPY setup/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN uv pip install --system -r requirements.txt
 
 # ------------------------------------------------------------
 # 📁 Project Files
