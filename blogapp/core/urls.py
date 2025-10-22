@@ -28,6 +28,7 @@ urlpatterns = [
     path('blog/', include('apps.blog.urls')),
     path('dashboard/', include('apps.dashboard.urls')),
     path('subscriptions/', include('apps.subscriptions.urls')),
+    path('tasks/', include('apps.todo_tasks.urls')),
 ]
 
 if settings.DEBUG:

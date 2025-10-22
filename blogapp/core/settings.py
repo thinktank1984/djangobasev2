@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'apps.notifications',
     'apps.blog',
     'apps.auditlog',
+    'apps.todo_tasks',
 ]
 
 MIDDLEWARE = [
