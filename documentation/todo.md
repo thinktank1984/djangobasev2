@@ -2,7 +2,9 @@
 # django 
     run it
     make it a lib
-    compare to pocketbase 
+    compare to pocketbase
+    dotnet as a lib
+
 
     
 # GEPA
