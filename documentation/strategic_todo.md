@@ -7,3 +7,4 @@
     6-dotnet in forth
     7-spacetimedb w dotnet
 Quran Program
+plugin has created a lot of files, why?
