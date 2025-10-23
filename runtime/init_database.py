@@ -109,13 +109,13 @@ def main():
     print("🚀 Django Blog Database Initialization")
     print("=" * 50)
 
-    # Change to the blogapp directory if not already there
+    # Change to the runtime directory if not already there
     script_dir = Path(__file__).parent
-    if script_dir.name != 'blogapp':
-        blogapp_dir = script_dir / 'blogapp'
-        if blogapp_dir.exists():
-            os.chdir(blogapp_dir)
-            print(f"📁 Changed to directory: {blogapp_dir}")
+    if script_dir.name != 'runtime':
+        runtime_dir = script_dir / 'runtime'
+        if runtime_dir.exists():
+            os.chdir(runtime_dir)
+            print(f"📁 Changed to directory: {runtime_dir}")
 
     try:
         # Step 1: Setup directories

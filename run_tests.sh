@@ -136,8 +136,8 @@ echo -e "${BLUE}🧪 Django Blog Test Runner${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-# Navigate to blogapp directory
-cd blogapp
+# Navigate to runtime directory
+cd runtime
 
 # Check if virtual environment should be used
 if [ "$USE_VENV" = true ] && [ -d "../venv" ]; then
@@ -149,7 +149,7 @@ fi
 
 # Check if Django project is set up correctly
 if [ ! -f "manage.py" ]; then
-    echo -e "${RED}❌ manage.py not found. Please run this from the blogapp directory${NC}"
+    echo -e "${RED}❌ manage.py not found. Please run this from the runtime directory${NC}"
     exit 1
 fi
 
@@ -308,8 +308,8 @@ if [ $TEST_FAILED -eq 0 ]; then
 
     if [ "$COVERAGE" = true ]; then
         echo ""
-        echo -e "${BLUE}📊 Coverage report generated at: blogapp/htmlcov/index.html${NC}"
-        echo "   Open with: open blogapp/htmlcov/index.html"
+        echo -e "${BLUE}📊 Coverage report generated at: runtime/htmlcov/index.html${NC}"
+        echo "   Open with: open runtime/htmlcov/index.html"
     fi
 
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

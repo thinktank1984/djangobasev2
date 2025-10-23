@@ -153,9 +153,9 @@ build_docker_images() {
     echo -e "${BLUE}🔨 Building Docker images...${NC}"
 
     # Check if Dockerfile exists
-    if [ ! -f "blogapp/Dockerfile" ]; then
+    if [ ! -f "runtime/Dockerfile" ]; then
         echo -e "${BLUE}Creating Dockerfile for Django application...${NC}"
-        cat > blogapp/Dockerfile << 'EOF'
+        cat > runtime/Dockerfile << 'EOF'
 FROM python:3.12-slim
 
 # Set environment variables
@@ -219,12 +219,12 @@ services:
 
   web:
     build:
-      context: ./blogapp
+      context: ./runtime
       dockerfile: Dockerfile
     container_name: django_blog_app
     command: gunicorn --bind 0.0.0.0:8000 core.wsgi:application
     volumes:
-      - ./blogapp:/app
+      - ./runtime:/app
     ports:
       - "8000:8000"
     depends_on:
@@ -269,7 +269,7 @@ run_migrations() {
         docker compose exec web python create_sample_data.py
     else
         # Local migrations
-        cd blogapp
+        cd runtime
 
         # Create logs directory for database logging
         echo -e "${BLUE}Creating logs directory...${NC}"
@@ -314,7 +314,7 @@ EOF
             export DB_HOST='localhost'
             export DB_PORT='5432'
 
-            cd blogapp
+            cd runtime
         fi
 
         # Run migrations for default database
@@ -462,7 +462,7 @@ if [ "$COMMAND" = "setup" ]; then
             echo -e "${BLUE}Step 2: Installing dependencies...${NC}"
             pip install --upgrade pip setuptools wheel
             pip install -r setup/requirements.txt
-            pip install -r blogapp/requirements.txt
+            pip install -r runtime/requirements.txt
             echo -e "${GREEN}✅ Dependencies installed${NC}"
         fi
 
@@ -497,19 +497,19 @@ EOF
             sleep 5
 
             # Update .env for PostgreSQL
-            if [ -f "blogapp/.env" ]; then
-                sed -i 's/DB_ENGINE=sqlite/DB_ENGINE=postgresql/' blogapp/.env
-                sed -i 's/DB_NAME=db.sqlite3/DB_NAME=djangoblog/' blogapp/.env
-                sed -i 's/DB_USER=.*/DB_USER=postgres/' blogapp/.env
-                sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=postgres/' blogapp/.env
-                sed -i 's/DB_HOST=.*/DB_HOST=localhost/' blogapp/.env
-                sed -i 's/DB_PORT=.*/DB_PORT=5432/' blogapp/.env
+            if [ -f "runtime/.env" ]; then
+                sed -i 's/DB_ENGINE=sqlite/DB_ENGINE=postgresql/' runtime/.env
+                sed -i 's/DB_NAME=db.sqlite3/DB_NAME=djangoblog/' runtime/.env
+                sed -i 's/DB_USER=.*/DB_USER=postgres/' runtime/.env
+                sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=postgres/' runtime/.env
+                sed -i 's/DB_HOST=.*/DB_HOST=localhost/' runtime/.env
+                sed -i 's/DB_PORT=.*/DB_PORT=5432/' runtime/.env
             fi
         fi
 
         # Run migrations and setup
         echo -e "${BLUE}Step 4: Creating logs directory...${NC}"
-        cd blogapp
+        cd runtime
         mkdir -p logs
         echo -e "${GREEN}✅ Logs directory created${NC}"
 
@@ -571,7 +571,7 @@ if [ "$COMMAND" = "run" ]; then
     else
         # Local run workflow
         echo -e "${BLUE}💻 Starting local development server...${NC}"
-        cd blogapp
+        cd runtime
 
         # Check if virtual environment exists (skip in devcontainer)
         if [ -n "$DEVCONTAINER" ] || [ -d "../.devcontainer" ]; then
@@ -660,13 +660,13 @@ if ! check_docker; then
         echo -e "${BLUE}Step 2: Installing dependencies...${NC}"
         pip install --upgrade pip setuptools wheel
         pip install -r setup/requirements.txt
-        pip install -r blogapp/requirements.txt
+        pip install -r runtime/requirements.txt
         echo -e "${GREEN}✅ Dependencies installed${NC}"
     fi
 
     # Run migrations and setup
     echo -e "${BLUE}Step 3: Creating logs directory...${NC}"
-    cd blogapp
+    cd runtime
     mkdir -p logs
     echo -e "${GREEN}✅ Logs directory created${NC}"
 

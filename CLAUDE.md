@@ -65,7 +65,7 @@ The application uses PostgreSQL by default in the devcontainer environment:
 
 ```
 workspace/
-├── blogapp/                 # Django application
+├── runtime/                # Django application
 │   ├── core/               # Django settings and configuration
 │   ├── apps/               # Django apps (blog, dashboard, etc.)
 │   ├── templates/          # HTML templates

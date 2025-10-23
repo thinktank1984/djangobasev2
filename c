@@ -9,6 +9,8 @@ if [[ -s "$HOME/.nvm/nvm.sh" ]]; then
     # If .nvmrc exists in current directory, use it, otherwise use default
     echo "Running nvm use (will use .nvmrc if present)..."
     nvm use default
+else
+    echo "NVM not found, using system node..."
 fi
 
 # Install/update Claude Code
@@ -16,13 +18,20 @@ echo "Installing/updating Claude Code..."
 
 # DEBUG: Check nvm and npm status
 echo "--- NVM/NPM Debug Info ---"
-echo -n "nvm current: "; nvm current
+if command -v nvm &> /dev/null; then
+    echo -n "nvm current: "; nvm current 2>/dev/null || echo "N/A"
+else
+    echo "nvm: not available"
+fi
 echo -n "which node: "; which node
 echo -n "npm prefix: "; npm config get prefix
 echo "--------------------------"
 
-# Try without sudo first, fallback to sudo if needed
-npm install -g @anthropic-ai/claude-code@1.0.128
+# Try with sudo first if we need system-wide installation, then without sudo
+if ! npm install -g @anthropic-ai/claude-code@1.0.128 2>/dev/null; then
+    echo "Global install failed, trying with sudo..."
+    sudo npm install -g @anthropic-ai/claude-code@1.0.128
+fi
 
 # Check if Claude Code is available
 if ! command -v claude &> /dev/null; then
@@ -36,4 +45,4 @@ fi
 echo "Starting Claude Code..."
 
 # No arguments - start interactive mode
-/Users/ed.sharood2/.npm-global/bin/claude --model claude-sonnet-4-5@20250929  --dangerously-skip-permissions 
+claude   --dangerously-skip-permissions 

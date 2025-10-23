@@ -66,7 +66,7 @@
 
 	// ✅ Use uv for dependency installation (fast, cache-aware)
 	"postCreateCommand": "if [ -f setup/requirements.txt ]; then uv pip install --system -r setup/requirements.txt; elif [ -f requirements.txt ]; then uv pip install --system -r requirements.txt; fi",
-	"postStartCommand": "cd blogapp && python init_database.py",
+	"postStartCommand": "cd runtime && python init_database.py",
 "remoteEnv": {
 	"UV_CACHE_DIR": "/tmp/.uv-cache"
 },

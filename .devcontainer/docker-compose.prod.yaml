@@ -37,7 +37,7 @@ services:
 
   web:
     build:
-      context: ../blogapp
+      context: ../runtime
       dockerfile: Dockerfile.prod
     container_name: djangobase_web_prod
     restart: always
@@ -86,7 +86,7 @@ services:
 
   daphne:
     build:
-      context: ../blogapp
+      context: ../runtime
       dockerfile: Dockerfile.prod
     container_name: djangobase_daphne_prod
     restart: always

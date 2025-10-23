@@ -46,8 +46,8 @@ echo -e "${BLUE}    Type Checking with Mypy (Django)${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-# Navigate to blogapp directory
-cd blogapp
+# Navigate to runtime directory
+cd runtime
 
 # Check if virtual environment exists
 if [ -d "../venv" ]; then

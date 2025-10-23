@@ -22,8 +22,8 @@ echo ""
 echo -e "${YELLOW}Results will be saved to: $OUTPUT_DIR/${NC}"
 echo ""
 
-# Navigate to blogapp directory
-cd blogapp
+# Navigate to runtime directory
+cd runtime
 
 # Check if virtual environment exists
 if [ -d "../venv" ]; then
