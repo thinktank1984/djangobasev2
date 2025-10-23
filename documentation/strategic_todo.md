@@ -8,3 +8,5 @@
     7-spacetimedb w dotnet
 Quran Program
 plugin has created a lot of files, why?
+DJ 6
+https://docs.djangoproject.com/en/dev/releases/6.0/
