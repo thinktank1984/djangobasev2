@@ -1,4 +1,4 @@
-{% extends 'todo_tasks/base_todo.html' %}
+{% extends 'todo/base_todo.html' %}
 
 {% block title %}My Tasks{% endblock %}
 
@@ -6,7 +6,7 @@
 <div class="mb-8">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-900">My Tasks</h1>
-        <a href="{% url 'todo_tasks:task_create' %}"
+        <a href="{% url 'todo:task_create' %}"
            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
             <i class="fas fa-plus mr-2"></i>Create Task
         </a>
@@ -15,15 +15,15 @@
     <!-- Navigation Tabs -->
     <div class="mb-6 border-b border-gray-200">
         <nav class="-mb-px flex space-x-8">
-            <a href="{% url 'todo_tasks:task_list' %}"
+            <a href="{% url 'todo:task_list' %}"
                class="border-b-2 border-blue-500 text-blue-600 py-2 px-1 text-sm font-medium">
                 My Tasks
             </a>
-            <a href="{% url 'todo_tasks:my_shared_tasks' %}"
+            <a href="{% url 'todo:my_shared_tasks' %}"
                class="border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-2 px-1 text-sm font-medium">
                 Shared with Me
             </a>
-            <a href="{% url 'todo_tasks:task_lists' %}"
+            <a href="{% url 'todo:task_lists' %}"
                class="border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-2 px-1 text-sm font-medium">
                 Task Lists
             </a>
@@ -131,11 +131,11 @@
                                 <i class="fas fa-eye"></i>
                             </a>
                             {% if task.created_by == request.user %}
-                                <a href="{% url 'todo_tasks:task_edit' task.pk %}"
+                                <a href="{% url 'todo:task_edit' task.pk %}"
                                    class="text-green-600 hover:text-green-800 transition-colors">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <a href="{% url 'todo_tasks:task_delete' task.pk %}"
+                                <a href="{% url 'todo:task_delete' task.pk %}"
                                    class="text-red-600 hover:text-red-800 transition-colors">
                                     <i class="fas fa-trash"></i>
                                 </a>
@@ -196,7 +196,7 @@
                     Get started by creating your first task.
                 {% endif %}
             </p>
-            <a href="{% url 'todo_tasks:task_create' %}"
+            <a href="{% url 'todo:task_create' %}"
                class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
                 <i class="fas fa-plus mr-2"></i>Create Your First Task
             </a>

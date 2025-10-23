@@ -1,4 +1,4 @@
-{% extends 'todo_tasks/base_todo.html' %}
+{% extends 'todo/base_todo.html' %}
 
 {% block title %}{{ task.title }}{% endblock %}
 
@@ -10,19 +10,19 @@
             <h1 class="text-3xl font-bold text-gray-900">{{ task.title }}</h1>
             <div class="flex space-x-2">
                 {% if task.created_by == request.user or task.shared_tasks.shared_with == request.user and task.shared_tasks.permission in 'edit delete' %}
-                    <a href="{% url 'todo_tasks:task_edit' task.pk %}"
+                    <a href="{% url 'todo:task_edit' task.pk %}"
                        class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors">
                         <i class="fas fa-edit mr-2"></i>Edit
                     </a>
                 {% endif %}
                 {% if task.created_by == request.user %}
-                    <a href="{% url 'todo_tasks:share_task' task.pk %}"
+                    <a href="{% url 'todo:share_task' task.pk %}"
                        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
                         <i class="fas fa-share mr-2"></i>Share
                     </a>
                 {% endif %}
                 {% if task.created_by == request.user or task.shared_tasks.shared_with == request.user and task.shared_tasks.permission == 'delete' %}
-                    <a href="{% url 'todo_tasks:task_delete' task.pk %}"
+                    <a href="{% url 'todo:task_delete' task.pk %}"
                        class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors">
                         <i class="fas fa-trash mr-2"></i>Delete
                     </a>
@@ -93,7 +93,7 @@
                 </h2>
 
                 <!-- Add Comment Form -->
-                <form method="post" action="{% url 'todo_tasks:add_comment' task.pk %}" class="mb-6">
+                <form method="post" action="{% url 'todo:add_comment' task.pk %}" class="mb-6">
                     {% csrf_token %}
                     <div class="mb-4">
                         {{ comment_form.content }}
@@ -194,7 +194,7 @@
 
     <!-- Navigation -->
     <div class="mt-8 flex justify-between">
-        <a href="{% url 'todo_tasks:task_list' %}"
+        <a href="{% url 'todo:task_list' %}"
            class="text-blue-600 hover:text-blue-800 transition-colors">
             <i class="fas fa-arrow-left mr-2"></i>Back to Tasks
         </a>

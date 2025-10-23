@@ -54,7 +54,7 @@ def task_list(request):
         'current_priority': priority_filter,
         'search_query': search_query,
     }
-    return render(request, 'todo_tasks/task_list.html', context)
+    return render(request, 'todo/task_list.html', context)
 
 
 @login_required
@@ -78,7 +78,7 @@ def task_detail(request, pk):
         'comments': comments,
         'comment_form': comment_form,
     }
-    return render(request, 'todo_tasks/task_detail.html', context)
+    return render(request, 'todo/task_detail.html', context)
 
 
 @login_required
@@ -101,11 +101,11 @@ def task_create(request):
             )
 
             messages.success(request, 'Task created successfully!')
-            return redirect('todo_tasks:task_detail', pk=task.pk)
+            return redirect('todo:task_detail', pk=task.pk)
     else:
         form = TaskForm()
 
-    return render(request, 'todo_tasks/task_form.html', {
+    return render(request, 'todo/task_form.html', {
         'form': form,
         'title': 'Create Task'
     })
@@ -128,11 +128,11 @@ def task_edit(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, 'Task updated successfully!')
-            return redirect('todo_tasks:task_detail', pk=task.pk)
+            return redirect('todo:task_detail', pk=task.pk)
     else:
         form = TaskForm(instance=task)
 
-    return render(request, 'todo_tasks/task_form.html', {
+    return render(request, 'todo/task_form.html', {
         'form': form,
         'task': task,
         'title': 'Edit Task'
@@ -154,9 +154,9 @@ def task_delete(request, pk):
     if request.method == 'POST':
         task.delete()
         messages.success(request, 'Task deleted successfully!')
-        return redirect('todo_tasks:task_list')
+        return redirect('todo:task_list')
 
-    return render(request, 'todo_tasks/task_confirm_delete.html', {'task': task})
+    return render(request, 'todo/task_confirm_delete.html', {'task': task})
 
 
 @login_required
@@ -181,7 +181,7 @@ def add_comment(request, pk):
         comment.save()
         messages.success(request, 'Comment added successfully!')
 
-    return redirect('todo_tasks:task_detail', pk=pk)
+    return redirect('todo:task_detail', pk=pk)
 
 
 @login_required
@@ -235,11 +235,11 @@ def share_task(request, pk):
             except User.DoesNotExist:
                 messages.error(request, f'User "{username}" not found.')
 
-            return redirect('todo_tasks:task_detail', pk=pk)
+            return redirect('todo:task_detail', pk=pk)
     else:
         form = TaskShareForm()
 
-    return render(request, 'todo_tasks/share_task.html', {
+    return render(request, 'todo/share_task.html', {
         'form': form,
         'task': task
     })
@@ -258,7 +258,7 @@ def my_shared_tasks(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'todo_tasks/shared_tasks.html', {
+    return render(request, 'todo/shared_tasks.html', {
         'page_obj': page_obj
     })
 
@@ -275,7 +275,7 @@ def task_lists(request):
             task_list.created_by = request.user
             task_list.save()
             messages.success(request, 'Task list created successfully!')
-            return redirect('todo_tasks:task_lists')
+            return redirect('todo:task_lists')
     else:
         form = TaskListForm()
 
@@ -284,7 +284,7 @@ def task_lists(request):
         Q(created_by=request.user) | Q(is_public=True)
     ).distinct()
 
-    return render(request, 'todo_tasks/task_lists.html', {
+    return render(request, 'todo/task_lists.html', {
         'task_lists': task_lists,
         'form': form
     })
@@ -303,7 +303,7 @@ def task_list_detail(request, pk):
 
     tasks = task_list.tasks.all()
 
-    return render(request, 'todo_tasks/task_list_detail.html', {
+    return render(request, 'todo/task_list_detail.html', {
         'task_list': task_list,
         'tasks': tasks
     })
