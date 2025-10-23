@@ -54,6 +54,9 @@ INSTALLED_APPS = [
     'crispy_tailwind',
     'channels',
 
+    # Plugin system
+    'apps.plugins',
+
     # Local apps
     'apps.accounts',
     'apps.landing',
@@ -62,7 +65,9 @@ INSTALLED_APPS = [
     'apps.notifications',
     'apps.blog',
     'apps.auditlog',
-    'apps.todo_tasks',
+
+    # Plugins
+    'plugins.todo.apps.TodoConfig',
 ]
 
 MIDDLEWARE = [

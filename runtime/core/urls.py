@@ -20,6 +20,10 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.http import HttpResponse
 
+# Import plugin manager for dynamic URL loading
+from apps.plugins.base import PluginManager
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
@@ -28,7 +32,12 @@ urlpatterns = [
     path('blog/', include('apps.blog.urls')),
     path('dashboard/', include('apps.dashboard.urls')),
     path('subscriptions/', include('apps.subscriptions.urls')),
-    path('tasks/', include('apps.todo_tasks.urls')),
+
+    # Plugin URLs
+    path('plugins/', include(PluginManager.load_plugin_urls())),
+
+    # Backward compatibility: redirect /tasks/ to todo plugin
+    path('tasks/', include('plugins.todo.urls')),
 ]
 
 if settings.DEBUG:
